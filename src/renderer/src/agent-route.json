@@ -1,0 +1,17 @@
+[
+  {
+    "path": "/my-call",
+    "icon": "",
+    "title": "routes.myCall",
+    "page": "Call Bot",
+    "isHide": false,
+    "children": [
+      {
+        "path": "/agent-my-call",
+        "icon": "",
+        "title": "routes.myCall",
+        "page": "My Call"
+      }
+    ]
+  }
+]

@@ -1,0 +1,46 @@
+import request from '../utils/request'
+
+export const getAgentWorkbenchUserInfo = (number: string) => {
+  return request(`/basic/agent-workbench/agent/info?number=${number}`, 'GET', {})
+}
+
+export const logout = () => {
+  return request(`/basic/user/logout`, 'POST', {})
+}
+
+export const agentLogout = (number: string) => {
+  return request(`/basic/agent-workbench/logout`, 'POST', { number })
+}
+
+export const agentLogin = (params: {
+  number: string
+  password: string
+  captchaCode: string
+  captchaText: string
+  nonce: string
+  timestamp: number
+}) => {
+  return request(`/basic/agent-workbench/login`, 'POST', params)
+}
+
+export const getCaptcha = async () => {
+  try {
+    const response = await request(
+      `/basic/public/captcha`,
+      'GET',
+      {},
+      {
+        responseType: 'blob'
+      }
+    )
+    if (response.headers['captchacode']) {
+      // 从响应头中获取验证码标识
+      return {
+        image: response.data,
+        captchaCode: response.headers['captchacode']
+      }
+    }
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : '获取验证码失败')
+  }
+}

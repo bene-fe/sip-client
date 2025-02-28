@@ -1,0 +1,115 @@
+{
+  "common": {
+    "logout": "Logout",
+    "login": "Login",
+    "welcome": "Welcome",
+    "settings": "Settings",
+    "language": {
+      "zh": "中文",
+      "en": "English"
+    }
+  },
+  "login": {
+    "title": "Login To",
+    "tabs": {
+      "admin": "Admin Login",
+      "agent": "Agent Login"
+    },
+    "username": {
+      "placeholder": "Enter username",
+      "required": "Please enter username"
+    },
+    "password": {
+      "placeholder": "Enter password",
+      "required": "Please enter password"
+    },
+    "captcha": {
+      "placeholder": "Enter captcha",
+      "required": "Please enter captcha",
+      "error": "Failed to get captcha",
+      "alt": "Captcha image"
+    },
+    "submit": "Login",
+    "success": "Login successful",
+    "invalid": "Invalid username or password",
+    "error": "Login failed",
+    "copyright": "© 2025 Jingle Byte. All rights reserved."
+  },
+  "routes": {
+    "myCall": "My Call",
+    "todoList": "ToDos",
+    "outboundTaskTodo": "My Outbound Tasks",
+    "contactTaskTodo": "My Contact Plans",
+    "dashboard": "Dashboard",
+    "callBot": {
+      "title": "Call Bot",
+      "outboundCall": {
+        "title": "Outbound Call",
+        "reports": "Outbound Reports",
+        "tasks": "Tasks",
+        "taskDetail": "Task Detail",
+        "callRecord": "Call Record",
+        "callDetail": "Call Detail"
+      },
+      "autoCall": {
+        "title": "Auto Call",
+        "template": "AutoCall Template",
+        "record": "AutoCall Record"
+      },
+      "scriptManagement": {
+        "title": "Script Management",
+        "myScript": "My Script"
+      }
+    },
+    "callCenter": {
+      "title": "Call Center",
+      "reports": {
+        "title": "Reports",
+        "outboundTaskReports": "Outbound Task Reports",
+        "agentOutboundReports": "Agent Outbound Reports",
+        "inboundReports": "Inbound Reports"
+      },
+      "outboundTasks": {
+        "title": "Outbound Tasks",
+        "tasks": "Tasks",
+        "taskCallRecord": "Task Call Record",
+        "taskCallDetail": "Task Call Detail",
+        "taskDetail": "Task Detail",
+        "taskRecordDetail": "Task Record Detail"
+      },
+      "record": {
+        "title": "Record",
+        "callRecord": "VOIP CDR",
+        "callRecordDetail": "Call Record Detail"
+      }
+    },
+    "otp": {
+      "title": "OTP",
+      "messageCenter": {
+        "title": "Message Center",
+        "messageTemplate": "Message Template",
+        "messageReports": "Message Reports"
+      }
+    },
+    "managementCenter": {
+      "title": "Management Center",
+      "accountManagement": {
+        "title": "Account Management",
+        "accountInfo": "Account Information",
+        "userManagement": "User Management",
+        "roleManagement": "Role Management"
+      },
+      "agentManagement": {
+        "title": "Agent Management",
+        "agentList": "Agent List",
+        "agentGroup": "Agent Group",
+        "agentRoleManagement": "Agent Role Management"
+      },
+      "settings": {
+        "title": "Settings",
+        "agentManagement": "Agent Management",
+        "callbackSettings": "Callback Settings"
+      }
+    }
+  }
+}
