@@ -7,6 +7,7 @@ import timezone from 'dayjs/plugin/timezone'
 import { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { logout as logoutApi } from '../api/user'
+import useStore from '@renderer/store'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -160,8 +161,11 @@ export const formatToUTCParams = (startDate: string, endDate: string, timezone: 
 }
 
 export const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('userInfo')
+  const { setAgentInfo, setAgentDetail } = useStore.getState()
+  setAgentInfo(null)
+  setAgentDetail(null)
   localStorage.removeItem('agentInfo')
+  localStorage.removeItem('agentDetail')
   window.location.href = '/login'
+  logoutApi()
 }

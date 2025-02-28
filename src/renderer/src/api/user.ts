@@ -40,6 +40,11 @@ export const getCaptcha = async () => {
         captchaCode: response.headers['captchacode']
       }
     }
+    // 如果没有captchaCode，返回一个默认值
+    return {
+      image: null,
+      captchaCode: ''
+    }
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : '获取验证码失败')
   }
