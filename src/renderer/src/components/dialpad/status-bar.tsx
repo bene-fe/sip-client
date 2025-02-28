@@ -3,7 +3,7 @@ import useDialpad from './dialpad'
 import TimeCount, { TimeAction } from './time-count'
 import { PhoneFilled, UserOutlined, SyncOutlined } from '@ant-design/icons'
 import DialpadIcon from './dialpad-icon'
-import { useState, cloneElement } from 'react'
+import { useState, cloneElement, useEffect } from 'react'
 import SignalDisplay from '../signal-display'
 
 const StatusBar = (props: { className?: string }) => {
@@ -28,7 +28,6 @@ const StatusBar = (props: { className?: string }) => {
   const [agentList, setAgentList] = useState([])
 
   const handleChangeStatus = (value: number) => {
-    setCountTimeAction(TimeAction.Stop)
     switch (value) {
       case 2:
         if (status === 1) {
@@ -54,11 +53,6 @@ const StatusBar = (props: { className?: string }) => {
         logout()
         break
     }
-    setTimeout(() => {
-      if (status !== 1) {
-        setCountTimeAction(TimeAction.Start)
-      }
-    }, 500)
   }
 
   const handleDigitClick = (digit: string) => {
@@ -73,6 +67,19 @@ const StatusBar = (props: { className?: string }) => {
       }
     })
   }
+
+  useEffect(() => {
+    // 状态码：1: 离线, 2: 在线, 3: 响铃中, 4: 通话中, 5: 呼叫中, 6: 小休中 7:忙碌中 8:整理中
+    // 需要记录时长的状态：2(工作台/在线), 3(响铃中), 4(通话中), 5(呼叫中), 8(整理中)
+    const needTimeCountStatuses = [2, 3, 4, 5, 8]
+
+    if (needTimeCountStatuses.includes(status)) {
+      setCountTimeAction(TimeAction.Stop)
+      setTimeout(() => {
+        setCountTimeAction(TimeAction.Start)
+      }, 500)
+    }
+  }, [status])
 
   const renderDialpad = () => {
     const digits = [
@@ -283,6 +290,7 @@ const StatusBar = (props: { className?: string }) => {
           onChange={(e) => setPhoneNumber(e.target.value)}
           disabled={sipState.statusIsCall || sipState.statusIsring}
           className="shadow-sm"
+          onPressEnter={handleMakeCall}
           placeholder="输入电话号码"
           addonBefore={
             <div className="flex items-center justify-center w-[38px] px-1">

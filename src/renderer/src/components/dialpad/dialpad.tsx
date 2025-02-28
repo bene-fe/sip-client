@@ -4,6 +4,7 @@ import { message } from 'antd'
 import { TimeAction } from './time-count'
 import myCallStore from '../../pages/my-call/my-call-store'
 import { useCheckRouteIsMyCall } from './utils'
+import { logout } from '../../utils'
 
 type Store = {
   sipInstance: SipClient | null
@@ -201,6 +202,12 @@ const useDialpad = create<Store & Action>((set, get) => ({
                 fetchTaskData()
               }
             }
+          },
+          kick: () => {
+            message.error('您的账号已在其他设备登录，您已被强制下线。')
+            setTimeout(() => {
+              logout()
+            }, 2000)
           }
         })
       })
@@ -261,6 +268,12 @@ const useDialpad = create<Store & Action>((set, get) => ({
                 fetchTaskData()
               }
             }
+          },
+          kick: () => {
+            message.error('您的账号已在其他设备登录，您已被强制下线。')
+            setTimeout(() => {
+              logout()
+            }, 2000)
           }
         })
       })
@@ -326,7 +339,8 @@ const useDialpad = create<Store & Action>((set, get) => ({
             discaller: data.otherLegNumber
           },
           currentCallNumber: data.otherLegNumber,
-          discallee: get().sipState.agentNo
+          discallee: get().sipState.agentNo,
+          countCallAction: TimeAction.Start
         })
         break
       case 'IN_CALL':
@@ -340,7 +354,6 @@ const useDialpad = create<Store & Action>((set, get) => ({
             statusIsring: false,
             statusIsCall: true
           },
-          statusIsHold: false,
           countCallAction: TimeAction.Start
         })
         break

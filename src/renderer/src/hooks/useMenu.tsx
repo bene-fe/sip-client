@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { menuIconMap } from '../constants/menuIcons'
-import useStore from '../store'
 import { useAuth } from '../auth/useAuth'
 import useLanguageStore from '../store/language'
 import routeAgent from '../agent-route.json'
@@ -32,7 +31,6 @@ export const useMenu = () => {
   const [error, setError] = useState<string | null>(null)
   const [route, setRoute] = useState<MenuItem[]>([])
   const { t } = useTranslation()
-  const { token } = useStore()
   const { isAuthenticated } = useAuth()
   const { language } = useLanguageStore()
 
@@ -47,7 +45,7 @@ export const useMenu = () => {
     }
 
     fetchMenu()
-  }, [token, isAuthenticated, language])
+  }, [isAuthenticated, language])
 
   return { error, route }
 }

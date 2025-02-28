@@ -137,7 +137,7 @@ const myCallStore = create<Store>()((set, get) => ({
         const { data } = response
         // 转换时区
         data.records.forEach((item: any) => {
-          item.beginTime = convertTimeZone(agentDetail.org?.timezone, item.beginTime, true)
+          item.beginTime = convertTimeZone(agentDetail?.org?.timezone, item.beginTime, true)
         })
         set({
           taskData: data.records,

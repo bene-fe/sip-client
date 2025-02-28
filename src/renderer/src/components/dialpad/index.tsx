@@ -123,7 +123,7 @@ const Dialpad = ({ className }: { className?: string }) => {
         type="text"
         shape="circle"
         icon={<PauseIcon className={`${statusIsHold ? 'text-red-500' : 'text-white'} w-6 h-6`} />}
-        disabled={statusIsHold}
+        disabled={status !== 4}
         onClick={() => {
           if (statusIsHold) {
             unholdCall()
@@ -163,7 +163,7 @@ const Dialpad = ({ className }: { className?: string }) => {
             size={size}
             type="text"
             shape="circle"
-            icon={<MicIcon className="text-white w-6 h-6" />}
+            icon={<MicIcon className={`${disableMic ? 'text-red-500' : 'text-white'} w-6 h-6`} />}
             onClick={() => {
               if (disableMic) {
                 unmuteCall()
@@ -259,7 +259,7 @@ const Dialpad = ({ className }: { className?: string }) => {
           </div>
 
           <div className="flex items-center justify-center gap-4">
-            {status === 3 && renderCallButton({ size: 'large' })}
+            {status === 3 && sipState.callDirection !== 'outbound' && renderCallButton({ size: 'large' })}
             {[3, 4, 5].includes(status) && renderHangupButton({ size: 'large' })}
           </div>
         </div>

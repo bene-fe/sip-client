@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export enum TimeAction {
   Start,
-  Stop,
+  Stop
 }
 
 interface TimeCountProps {
@@ -13,28 +13,30 @@ interface TimeCountProps {
 
 const TimeCount: React.FC<TimeCountProps> = ({ action, className }) => {
   const [time, setTime] = useState(0)
-  const [isRunning, setIsRunning] = useState(false)
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | undefined = undefined
+    // 清除之前的计时器
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = undefined
+    }
 
-    // 无论是什么动作，都先清零计时器
-    setTime(0)
+    // 只有在 Stop 状态时才重置计时器
+    if (action === TimeAction.Stop) {
+      setTime(0)
+    }
 
     if (action === TimeAction.Start) {
-      setIsRunning(true)
-      interval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         setTime((prevTime) => prevTime + 1)
       }, 1000)
     }
 
-    if (action === TimeAction.Stop && isRunning) {
-      setIsRunning(false)
-      clearInterval(interval)
-    }
-
     return () => {
-      clearInterval(interval)
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
     }
   }, [action])
 
