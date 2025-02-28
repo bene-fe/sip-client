@@ -55,7 +55,9 @@ const StatusBar = (props: { className?: string }) => {
         break
     }
     setTimeout(() => {
-      setCountTimeAction(TimeAction.Start)
+      if (status !== 1) {
+        setCountTimeAction(TimeAction.Start)
+      }
     }, 500)
   }
 

@@ -77,7 +77,6 @@ const Dialpad = ({ className }: { className?: string }) => {
         // debug: true,
       })
     })
-    setCountTimeAction(TimeAction.Start)
 
     return () => {
       sipInstance?.unregister()
