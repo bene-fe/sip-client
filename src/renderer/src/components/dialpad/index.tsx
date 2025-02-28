@@ -2,7 +2,7 @@ import Graggable from './graggable'
 import useDialpad from './dialpad'
 import { useEffect, useState } from 'react'
 import SipCall from 'sip-call-ring'
-import TimeCount, { TimeAction } from './time-count'
+import TimeCount from './time-count'
 import { Avatar, Button } from 'antd'
 import { PhoneFilled, UserOutlined, SyncOutlined } from '@ant-design/icons'
 import TransferIcon from './transfer-icon'
@@ -27,7 +27,6 @@ const Dialpad = ({ className }: { className?: string }) => {
     sipState,
     setSipInstance,
     setSipState,
-    setCountTimeAction,
     status,
     hangupCall,
     answerCall,
