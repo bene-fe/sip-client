@@ -14,14 +14,14 @@ export const listenAction = () => {
   const { makeCall } = useDialpad.getState()
 
   // 注册SIP呼叫事件监听器
-  const callbackCall = (action: string, phone: string) => {
+  const makeCallback = (action: string, phone: string) => {
     if (action === 'call' && isString(phone)) {
       makeCall(phone)
     }
   }
 
   // 注册监听器并保存返回的移除函数
-  const removeCallListener = window.api.makeCall(callbackCall)
+  const removeCallListener = window.api.makeCall(makeCallback)
   registerListener(removeCallListener)
 
   // 可以注册更多监听器，例如：
@@ -30,7 +30,7 @@ export const listenAction = () => {
     console.log('notification--->', type, message)
     // 处理通知
   }
-  
+
   const removeNotificationListener = window.api.onNotification(callbackNotification)
   registerListener(removeNotificationListener)
   */
