@@ -1,8 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain, Menu, Tray, nativeImage } from 'electron'
+import { app, shell, BrowserWindow, Menu, Tray, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { parseSipUrl } from './sip-protocal'
+import { sipAction } from './action/sip-schema-action'
+import actionListener from './action/index'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -80,12 +81,11 @@ app.whenReady().then(() => {
 
   app.setAsDefaultProtocolClient('sip')
   app.on('open-url', (_, url) => {
-    const { user, host, port, params } = parseSipUrl(url)
-    console.log(user, host, port, params)
+    sipAction(BrowserWindow.getAllWindows()[0].webContents, url)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  // IPC Action Listenner
+  actionListener(BrowserWindow.getAllWindows()[0])
 
   createWindow()
 
