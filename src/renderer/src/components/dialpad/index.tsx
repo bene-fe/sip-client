@@ -279,13 +279,13 @@ const Dialpad = ({ className }: { className?: string }) => {
             {[3, 4, 5].includes(status) && renderHangupButton({ size: 'large' })}
           </div>
         </div>
-        {/* {status === 4 && ( */}
-        <div className="border-t w-full border-gray-300/50 flex items-center justify-start gap-2 px-2 py-2">
-          {renderPauseButton({ size: 'large' })}
-          {renderTransferButton({ size: 'large' })}
-          {renderMicButton({ size: 'large' })}
-        </div>
-        {/* )} */}
+        {status === 4 && (
+          <div className="border-t w-full border-gray-300/50 flex items-center justify-start gap-2 px-2 py-2">
+            {renderPauseButton({ size: 'large' })}
+            {renderTransferButton({ size: 'large' })}
+            {renderMicButton({ size: 'large' })}
+          </div>
+        )}
         <div className="w-full flex flex-col items-start justify-center max-h-[350px]">
           {showAgentChange && (
             <>
