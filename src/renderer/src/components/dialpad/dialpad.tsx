@@ -310,7 +310,8 @@ const useDialpad = create<Store & Action>((set, get) => ({
           disableMic: false,
           currentCallNumber: '',
           lantencyStat: undefined,
-          logStatus: false
+          logStatus: false,
+          status: 1
         })
         break
       case 'INCOMING_CALL':

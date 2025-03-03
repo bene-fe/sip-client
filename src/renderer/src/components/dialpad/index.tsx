@@ -43,7 +43,8 @@ const Dialpad = ({ className }: { className?: string }) => {
     wrapUpEnd,
     getOrgOnlineAgent,
     transferCall,
-    setLoginInfo
+    setLoginInfo,
+    setCountCallAction
   } = useDialpad()
   const { agentInfo } = useStore()
   const [onlineAgents, setOnlineAgents] = useState<string[]>([])
@@ -83,6 +84,16 @@ const Dialpad = ({ className }: { className?: string }) => {
       setLoginInfo(null)
     }
   }, [])
+
+  useEffect(() => {
+    const needTimeCountStatuses = [3, 4, 5]
+    if (needTimeCountStatuses.includes(status)) {
+      setCountCallAction(TimeAction.Stop)
+      setTimeout(() => {
+        setCountCallAction(TimeAction.Start)
+      }, 500)
+    }
+  }, [status])
 
   const renderCallButton = ({ size = 'small' }: { size?: 'large' | 'small' }) => {
     return (
