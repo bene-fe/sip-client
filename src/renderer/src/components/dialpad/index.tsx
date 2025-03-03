@@ -290,7 +290,7 @@ const Dialpad = ({ className }: { className?: string }) => {
           </div>
         )}
         <div className="w-full flex flex-col items-start justify-center max-h-[350px]">
-          {showAgentChange && (
+          {showAgentChange && status === 4 && (
             <>
               <div className="w-full px-4 py-3 bg-gray-800/50 flex items-center justify-between">
                 <span className="text-gray-300 font-medium">在线坐席列表</span>
