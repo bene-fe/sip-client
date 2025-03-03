@@ -1,4 +1,4 @@
-import { Tabs, Descriptions, Card, Button } from 'antd'
+import { Tabs, Descriptions, Card, Button, Popconfirm } from 'antd'
 import myCallStore from './my-call-store'
 import { PhoneOutlined } from '@ant-design/icons'
 import useDialpad from '../../components/dialpad/dialpad'
@@ -283,16 +283,19 @@ const MyCallContent = ({ className }: { className?: string }) => {
     <div className={`flex flex-col h-full ${className}`}>
       <div className="p-4 border-b flex justify-between items-center">
         <h1 className="text-xl font-medium">{currentCustomer?.phone}</h1>
-        <Button
-          icon={<PhoneOutlined />}
-          variant="outlined"
-          className="border-gray-300"
-          onClick={() => {
+        <Popconfirm
+          title="确认拨打电话"
+          description="您确定要拨打这个电话号码吗？"
+          okText="确定"
+          cancelText="取消"
+          onConfirm={() => {
             if (currentCustomer?.phone) {
               makeCall(currentCustomer?.phone)
             }
           }}
-        />
+        >
+          <Button icon={<PhoneOutlined />} variant="outlined" className="border-gray-300" />
+        </Popconfirm>
       </div>
       <Tabs
         defaultActiveKey="call"
