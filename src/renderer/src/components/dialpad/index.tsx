@@ -2,7 +2,7 @@ import Graggable from './graggable'
 import useDialpad from './dialpad'
 import { useEffect, useState } from 'react'
 import SipCall from 'sip-call-ring'
-import TimeCount from './time-count'
+import TimeCount, { TimeAction } from './time-count'
 import { Avatar, Button } from 'antd'
 import { PhoneFilled, UserOutlined, SyncOutlined } from '@ant-design/icons'
 import TransferIcon from './transfer-icon'
@@ -10,6 +10,7 @@ import PauseIcon from './pause-icon'
 import { MicIcon, MicOffIcon } from './mic-icon'
 import useStore from '../../store'
 import SignalDisplay from '../signal-display'
+import Countdown from '../second-count-down'
 
 const statusMap: { [key: number]: string } = {
   1: '离线',
@@ -41,6 +42,7 @@ const Dialpad = ({ className }: { className?: string }) => {
     sipInstance,
     wrapUp,
     wrapUpEnd,
+    tidyTime,
     getOrgOnlineAgent,
     transferCall,
     setLoginInfo,
@@ -205,7 +207,10 @@ const Dialpad = ({ className }: { className?: string }) => {
   const renderWrapUpButton = () => {
     return (
       <div className="w-full flex flex-row justify-between items-center">
-        <span className="text-white text-xl">整理中</span>
+        <span className="text-white text-xl">
+          整理中
+          <Countdown seconds={status === 8 ? tidyTime : 0} />
+        </span>
         <div className="flex flex-row gap-2">
           <Button
             type="default"

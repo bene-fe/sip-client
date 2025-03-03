@@ -18,6 +18,7 @@ type Store = {
   countTimeAction: TimeAction
   discallee: string
   callbackInfo: any
+  tidyTime: number
   groupCallInfo: {
     process: {
       type: number
@@ -118,6 +119,7 @@ const useDialpad = create<Store & Action>((set, get) => ({
     locales: [],
     callEndInfo: undefined
   },
+  tidyTime: 0,
   statusIsHold: false,
   disableMic: false,
   lantencyStat: undefined,
@@ -202,6 +204,12 @@ const useDialpad = create<Store & Action>((set, get) => ({
                 fetchTaskData()
               }
             }
+
+            if (info.action === 'warpUpTimeNotify') {
+              set({
+                tidyTime: info.content
+              })
+            }
           },
           kick: () => {
             message.error('您的账号已在其他设备登录，您已被强制下线。')
@@ -267,6 +275,12 @@ const useDialpad = create<Store & Action>((set, get) => ({
                 }
                 fetchTaskData()
               }
+            }
+
+            if (info.action === 'warpUpTimeNotify') {
+              set({
+                tidyTime: info.content
+              })
             }
           },
           kick: () => {
