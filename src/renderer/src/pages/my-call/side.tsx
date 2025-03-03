@@ -158,7 +158,7 @@ const MyCallSide = () => {
         {mainTab === 'task' && (
           <div className="p-2 border-b">
             <div className="flex flex-col gap-2">
-              <div className="flex items-center">
+              <div className="flex items-center justify-between">
                 <span className="font-medium text-gray-700">外呼任务状态</span>
                 {groupCallInfo?.status !== undefined && (
                   <Tag color={TaskStatusColor[groupCallInfo.status as TaskStatus]}>

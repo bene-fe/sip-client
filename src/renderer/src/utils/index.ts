@@ -6,7 +6,7 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { logout as logoutApi } from '../api/user'
+import { agentLogout } from '../api/user'
 import useStore from '@renderer/store'
 import useDialpad from '@renderer/components/dialpad/dialpad'
 
@@ -162,10 +162,17 @@ export const formatToUTCParams = (startDate: string, endDate: string, timezone: 
 }
 
 export const logout = async () => {
-  const { setToken, setUserInfo, setAgentDetail, setAgentInfo } = useStore.getState()
+  const { setToken, setUserInfo, setAgentDetail, setAgentInfo, agentInfo } = useStore.getState()
   const { logout: logoutDialpad } = useDialpad.getState()
 
-  // 在清除所有状态和调用API后，最后再跳转到登录页面
+  try {
+    // 等待登出API完成
+    await agentLogout(agentInfo?.number)
+  } catch (error) {
+    console.error('登出API调用失败', error)
+  }
+
+  // // 在清除所有状态和调用API后，最后再跳转到登录页面
   window.location.replace('/login')
 
   // // 先清除状态和token
@@ -176,11 +183,4 @@ export const logout = async () => {
   setAgentDetail(null)
   setAgentInfo(null)
   localStorage.removeItem('token')
-
-  try {
-    // 等待登出API完成
-    await logoutApi()
-  } catch (error) {
-    console.error('登出API调用失败', error)
-  }
 }
