@@ -161,16 +161,18 @@ const MyCallContent = ({ className }: { className?: string }) => {
 
             <Descriptions title="通话信息" column={2} className="mt-4">
               <Descriptions.Item label="开始时间">
-                {callDetail?.beginTime ? convertTimeZone(agentDetail.org?.timezone, callDetail?.beginTime, true) : ''}
+                {callDetail?.beginTime ? convertTimeZone(agentDetail?.org?.timezone, callDetail?.beginTime, true) : ''}
               </Descriptions.Item>
               <Descriptions.Item label="结束时间">
-                {callDetail?.endTime ? convertTimeZone(agentDetail.org?.timezone, callDetail?.endTime, true) : ''}
+                {callDetail?.endTime ? convertTimeZone(agentDetail?.org?.timezone, callDetail?.endTime, true) : ''}
               </Descriptions.Item>
               <Descriptions.Item label="振铃时间">
-                {callDetail?.ringTime ? convertTimeZone(agentDetail.org?.timezone, callDetail?.ringTime, true) : ''}
+                {callDetail?.ringTime ? convertTimeZone(agentDetail?.org?.timezone, callDetail?.ringTime, true) : ''}
               </Descriptions.Item>
               <Descriptions.Item label="接听时间">
-                {callDetail?.answerTime ? convertTimeZone(agentDetail.org?.timezone, callDetail?.answerTime, true) : ''}
+                {callDetail?.answerTime
+                  ? convertTimeZone(agentDetail?.org?.timezone, callDetail?.answerTime, true)
+                  : ''}
               </Descriptions.Item>
               <Descriptions.Item label="振铃时长">
                 {callDetail?.ringDuration !== undefined ? `${callDetail.ringDuration}秒` : ''}
@@ -218,13 +220,13 @@ const MyCallContent = ({ className }: { className?: string }) => {
                     {detail.agent}
                   </Descriptions.Item>
                   <Descriptions.Item label="振铃时间" labelStyle={{ fontWeight: 500 }}>
-                    {detail.ringTime ? convertTimeZone(agentDetail.org?.timezone, detail.ringTime, true) : ''}
+                    {detail.ringTime ? convertTimeZone(agentDetail?.org?.timezone, detail.ringTime, true) : ''}
                   </Descriptions.Item>
                   <Descriptions.Item label="接听时间" labelStyle={{ fontWeight: 500 }}>
-                    {detail.answerTime ? convertTimeZone(agentDetail.org?.timezone, detail?.answerTime, true) : ''}
+                    {detail.answerTime ? convertTimeZone(agentDetail?.org?.timezone, detail?.answerTime, true) : ''}
                   </Descriptions.Item>
                   <Descriptions.Item label="结束时间" labelStyle={{ fontWeight: 500 }}>
-                    {detail.endTime ? convertTimeZone(agentDetail.org?.timezone, detail.endTime, true) : ''}
+                    {detail.endTime ? convertTimeZone(agentDetail?.org?.timezone, detail.endTime, true) : ''}
                   </Descriptions.Item>
                   <Descriptions.Item label="通话时长" labelStyle={{ fontWeight: 500 }}>
                     {detail.talkDuration ? `${detail.talkDuration} 秒` : ''}

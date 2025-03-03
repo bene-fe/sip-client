@@ -167,20 +167,19 @@ export const logout = async () => {
 
   try {
     // 等待登出API完成
-    await agentLogout(agentInfo?.number)
+    agentLogout(agentInfo?.number)
   } catch (error) {
     console.error('登出API调用失败', error)
   }
 
-  // // 在清除所有状态和调用API后，最后再跳转到登录页面
-  window.location.replace('/login')
-
-  // // 先清除状态和token
+  // 先清除状态和token
   logoutDialpad()
+  // 在清除所有状态和调用API后，最后再跳转到登录页面
   setToken('')
   setUserInfo(null)
   // setIsWorkBench(false)
   setAgentDetail(null)
   setAgentInfo(null)
   localStorage.removeItem('token')
+  window.location.replace('/login')
 }

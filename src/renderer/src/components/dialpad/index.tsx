@@ -95,6 +95,9 @@ const Dialpad = ({ className }: { className?: string }) => {
         setCountCallAction(TimeAction.Start)
       }, 500)
     }
+    if (status === 1) {
+      setShowAgentChange(false)
+    }
   }, [status])
 
   const renderCallButton = ({ size = 'small' }: { size?: 'large' | 'small' }) => {
