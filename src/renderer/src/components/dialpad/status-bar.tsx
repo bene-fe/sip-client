@@ -38,13 +38,10 @@ const StatusBar = (props: { className?: string }) => {
         break
       case 6:
         if (status === 1) {
-          setSipInstance(loginInfo)
-          setTimeout(() => {
-            setResting()
-          }, 4000)
-          break
+          setResting()
+        } else {
+          message.info('小休状态不能手动设置')
         }
-        setResting()
         break
       case 7:
         if (status === 1) {

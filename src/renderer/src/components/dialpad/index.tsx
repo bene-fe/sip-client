@@ -157,7 +157,7 @@ const Dialpad = ({ className }: { className?: string }) => {
         type="text"
         shape="circle"
         icon={<PauseIcon className={`${statusIsHold ? 'text-red-500' : 'text-white'} w-6 h-6`} />}
-        disabled={status !== 4}
+        disabled={status !== 4 || disableMic}
         onClick={() => {
           if (statusIsHold) {
             unholdCall()
