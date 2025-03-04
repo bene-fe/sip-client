@@ -56,3 +56,16 @@ export const queryCallSummary = (callUuid: string) => {
 export const addCallSummary = (params: { callUuid: string; callType: string; status: string; remark: string }) => {
   return request(`/call-center/agent-workbench/call-summary`, 'POST', params)
 }
+
+export const searchAgentSeat = (params: {
+  agentName?: string
+  agentNumber?: string
+  pageNumber?: number
+  pageSize?: number
+  status?: number
+}) => {
+  if (params.agentName) {
+    params.agentNumber = params.agentName
+  }
+  return request(`/basic/agent-workbench/sdk/cc/agent/list`, 'POST', params)
+}
