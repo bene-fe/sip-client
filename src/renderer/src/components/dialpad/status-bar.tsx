@@ -37,6 +37,13 @@ const StatusBar = (props: { className?: string }) => {
         setIdle()
         break
       case 6:
+        if (status === 1) {
+          setSipInstance(loginInfo)
+          setTimeout(() => {
+            setResting()
+          }, 4000)
+          break
+        }
         setResting()
         break
       case 7:
@@ -44,7 +51,7 @@ const StatusBar = (props: { className?: string }) => {
           setSipInstance(loginInfo)
           setTimeout(() => {
             setBusy()
-          }, 2000)
+          }, 4000)
           break
         }
         setBusy()
@@ -71,10 +78,10 @@ const StatusBar = (props: { className?: string }) => {
   useEffect(() => {
     // 状态码：1: 离线, 2: 在线, 3: 响铃中, 4: 通话中, 5: 呼叫中, 6: 小休中 7:忙碌中 8:整理中
     // 需要记录时长的状态：2(工作台/在线), 3(响铃中), 4(通话中), 5(呼叫中), 8(整理中)
-    const needTimeCountStatuses = [2, 3, 4, 5, 8]
+    const needTimeCountStatuses = [2, 3, 4, 5, 6, 7, 8]
 
+    setCountTimeAction(TimeAction.Stop)
     if (needTimeCountStatuses.includes(status)) {
-      setCountTimeAction(TimeAction.Stop)
       setTimeout(() => {
         setCountTimeAction(TimeAction.Start)
       }, 500)
