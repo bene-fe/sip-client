@@ -5,7 +5,7 @@ import { isString } from 'lodash'
 // 拨打电话
 export const makeCall = (window: WebContents, phone: string) => {
   if (phone) {
-    window.send('sip-action', 'makeCall', phone)
+    window.send('sip-action', 'call', phone)
   }
 }
 

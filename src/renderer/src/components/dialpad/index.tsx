@@ -124,8 +124,9 @@ const Dialpad = ({ className }: { className?: string }) => {
         disabled={![1, 8, 5, 4, 3].includes(status)}
         icon={<PhoneFilled className="text-white flex items-center justify-center" />}
         className={`text-xl flex items-center justify-center ${
-          ![1, 8, 5, 4, 3].includes(status) ? 'bg-gray-300' : 'bg-green-500'
+          ![1, 8, 5, 4, 3].includes(status) ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'
         }`}
+        style={![1, 8, 5, 4, 3].includes(status) ? {} : { backgroundColor: '#52c41a', borderColor: '#52c41a' }}
         onClick={() => {
           answerCall()
         }}
@@ -139,10 +140,12 @@ const Dialpad = ({ className }: { className?: string }) => {
         type="text"
         shape="circle"
         icon={<PhoneFilled className="text-white flex items-center justify-center rotate-180" />}
+        danger
+        className="bg-red-500 hover:bg-red-600"
+        style={{ backgroundColor: '#f5222d', borderColor: '#f5222d' }}
         onClick={() => {
           hangupCall()
         }}
-        className="bg-red-500"
       />
     )
   }
@@ -436,10 +439,8 @@ const Dialpad = ({ className }: { className?: string }) => {
                       {index + 1}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-gray-200 text-sm font-medium">坐席 {agent.agentName}</span>
-                      <span className="text-gray-400 text-xs">
-                        Extension #{(index + 1).toString().padStart(3, '0')}
-                      </span>
+                      <span className="text-gray-200 text-sm font-medium">坐席 {agent?.agentName}</span>
+                      <span className="text-gray-400 text-xs">Agent Number #{agent.agentNumber}</span>
                     </div>
                     <Button
                       type="text"

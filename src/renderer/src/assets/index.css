@@ -474,6 +474,27 @@ a:hover {
 .dark .ant-form-item-label > label {
   @apply text-gray-300;
 }
+
+.dark .ant-btn-default {
+  @apply border-gray-600 text-gray-300 bg-gray-800;
+}
+
+.dark .ant-btn-default:hover {
+  @apply border-primary-500 text-primary-400;
+}
+
+.dark .ant-btn-primary {
+  @apply bg-primary-600 text-white;
+}
+
+.dark .ant-btn-primary .anticon {
+  color: white;
+}
+
+.dark .ant-btn-primary:hover {
+  @apply bg-primary-500;
+}
+
 .dark .ant-tabs-tab {
   @apply text-gray-400;
 }

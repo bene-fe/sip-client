@@ -12,7 +12,7 @@ import useStore from '../../store'
 const MyCallContent = ({ className }: { className?: string }) => {
   const { agentDetail } = useStore()
   const { currentCustomer, mainTab, callDetail, agentCallDetail, setCallDetail, setAgentCallDetail } = myCallStore()
-  const { makeCall } = useDialpad()
+  const { makeCall, status } = useDialpad()
 
   const renderRecordType = (mainTab: string): any => {
     if (mainTab === 'task') {
@@ -260,7 +260,11 @@ const MyCallContent = ({ className }: { className?: string }) => {
           <Card>
             <Descriptions title="客户资料" column={2}>
               <Descriptions.Item label="Phone">{currentCustomer?.phone}</Descriptions.Item>
-              <Descriptions.Item label="Begin Time">{currentCustomer?.beginTime}</Descriptions.Item>
+              <Descriptions.Item label="Begin Time">
+                {currentCustomer?.beginTime
+                  ? convertTimeZone(agentDetail?.org?.timezone, currentCustomer?.beginTime, true)
+                  : '-'}
+              </Descriptions.Item>
             </Descriptions>
           </Card>
         </div>
@@ -294,6 +298,7 @@ const MyCallContent = ({ className }: { className?: string }) => {
           icon={<PhoneOutlined />}
           variant="outlined"
           className="border-gray-300"
+          disabled={status !== 2}
           onClick={() => {
             if (currentCustomer?.phone) {
               makeCall(currentCustomer?.phone)
