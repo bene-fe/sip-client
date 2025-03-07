@@ -115,6 +115,12 @@ const Dialpad = ({ className }: { className?: string }) => {
     }
   }, [status])
 
+  useEffect(() => {
+    if (sipState?.callEndInfo) {
+      setShowAgentChange(false)
+    }
+  }, [sipState])
+
   const renderCallButton = ({ size = 'small' }: { size?: 'large' | 'small' }) => {
     return (
       <Button
@@ -124,9 +130,8 @@ const Dialpad = ({ className }: { className?: string }) => {
         disabled={![1, 8, 5, 4, 3].includes(status)}
         icon={<PhoneFilled className="text-white flex items-center justify-center" />}
         className={`text-xl flex items-center justify-center ${
-          ![1, 8, 5, 4, 3].includes(status) ? 'bg-gray-300' : 'bg-green-500 hover:bg-green-600'
+          ![1, 8, 5, 4, 3].includes(status) ? 'bg-gray-300' : 'bg-green-500'
         }`}
-        style={![1, 8, 5, 4, 3].includes(status) ? {} : { backgroundColor: '#52c41a', borderColor: '#52c41a' }}
         onClick={() => {
           answerCall()
         }}
@@ -140,31 +145,10 @@ const Dialpad = ({ className }: { className?: string }) => {
         type="text"
         shape="circle"
         icon={<PhoneFilled className="text-white flex items-center justify-center rotate-180" />}
-        danger
-        className="bg-red-500 hover:bg-red-600"
-        style={{ backgroundColor: '#f5222d', borderColor: '#f5222d' }}
         onClick={() => {
           hangupCall()
         }}
-      />
-    )
-  }
-
-  const renderPauseButton = ({ size = 'small' }: { size?: 'large' | 'small' }) => {
-    return (
-      <Button
-        size={size}
-        type="text"
-        shape="circle"
-        icon={<PauseIcon className={`${statusIsHold ? 'text-red-500' : 'text-white'} w-6 h-6`} />}
-        disabled={status !== 4 || disableMic}
-        onClick={() => {
-          if (statusIsHold) {
-            unholdCall()
-          } else {
-            holdCall()
-          }
-        }}
+        className="bg-red-500"
       />
     )
   }
@@ -273,6 +257,29 @@ const Dialpad = ({ className }: { className?: string }) => {
     )
   }
 
+  const renderPauseButton = ({ size = 'small' }: { size?: 'large' | 'small' }) => {
+    return (
+      <Button
+        size={size}
+        type="text"
+        shape="circle"
+        icon={
+          <PauseIcon
+            className={`${statusIsHold ? 'text-red-500' : disableMic ? 'text-gray-500' : 'text-white'} w-6 h-6`}
+          />
+        }
+        disabled={disableMic}
+        onClick={() => {
+          if (statusIsHold) {
+            unholdCall()
+          } else {
+            holdCall()
+          }
+        }}
+      />
+    )
+  }
+
   const renderMicButton = ({ size = 'small' }: { size?: 'large' | 'small' }) => {
     return (
       <>
@@ -348,7 +355,7 @@ const Dialpad = ({ className }: { className?: string }) => {
   return (
     <Graggable>
       <div
-        className={`w-[480px] min-h-[90px] flex flex-col items-start justify-center px-4 gap-2 rounded-lg bg-[#081042] ${className}`}
+        className={`w-[520px] min-h-[90px] flex flex-col items-start justify-center px-4 gap-2 rounded-lg bg-[#081042] ${className}`}
         style={{
           transform: 'translate3d(0, 0, 0)',
           ...(status === 3 && {
@@ -372,10 +379,10 @@ const Dialpad = ({ className }: { className?: string }) => {
                 <div className="flex w-full flex-col items-start gap-2 flex-1">
                   <div className="text-white text-2xl font-bold tracking-wide">{currentCallNumber}</div>
                   <div className="flex flex-1 flex-row gap-3 items-center">
-                    <div className="text-gray-400 text-base">{statusMap[status]}</div>
                     <div className="flex items-center justify-center w-[38px]">
                       <SignalDisplay width={12} height={12} />
                     </div>
+                    <div className="text-gray-400 text-base">{statusMap[status]}</div>
                     <div className="text-gray-400 text-base">
                       <TimeCount action={countCallAction} />
                     </div>
@@ -439,7 +446,7 @@ const Dialpad = ({ className }: { className?: string }) => {
                       {index + 1}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-gray-200 text-sm font-medium">坐席 {agent?.agentName}</span>
+                      <span className="text-gray-200 text-sm font-medium">坐席 {agent.agentName}</span>
                       <span className="text-gray-400 text-xs">Agent Number #{agent.agentNumber}</span>
                     </div>
                     <Button

@@ -1,7 +1,7 @@
 import { Button, Input, Select, message } from 'antd'
 import useDialpad from './dialpad'
 import TimeCount, { TimeAction } from './time-count'
-import { PhoneFilled, UserOutlined, SyncOutlined } from '@ant-design/icons'
+import { PhoneFilled } from '@ant-design/icons'
 import DialpadIcon from './dialpad-icon'
 import { useState, cloneElement, useEffect } from 'react'
 import SignalDisplay from '../signal-display'
@@ -19,13 +19,27 @@ const StatusBar = (props: { className?: string }) => {
     setCountTimeAction,
     loginInfo,
     makeCall,
-    getOrgOnlineAgent
+    loginLoading
+    // getOrgOnlineAgent,
   } = useDialpad()
 
-  const [phoneNumber, setPhoneNumber] = useState<any>(null)
+  const [phoneNumber, setPhoneNumber] = useState('')
   const [isDialpadVisible, setIsDialpadVisible] = useState(false)
-  const [showAgentChange, setShowAgentChange] = useState(false)
-  const [agentList, setAgentList] = useState([])
+  // const [showAgentChange, setShowAgentChange] = useState(false)
+  // const [agentList, setAgentList] = useState([])
+
+  useEffect(() => {
+    // 状态码：1: 离线, 2: 在线, 3: 响铃中, 4: 通话中, 5: 呼叫中, 6: 小休中 7:忙碌中 8:整理中
+    // 需要记录时长的状态：2(工作台/在线), 3(响铃中), 4(通话中), 5(呼叫中), 8(整理中)
+    const needTimeCountStatuses = [2, 3, 4, 5, 6, 7, 8]
+
+    setCountTimeAction(TimeAction.Stop)
+    if (needTimeCountStatuses.includes(status)) {
+      setTimeout(() => {
+        setCountTimeAction(TimeAction.Start)
+      }, 500)
+    }
+  }, [status])
 
   const handleChangeStatus = (value: number) => {
     switch (value) {
@@ -37,10 +51,10 @@ const StatusBar = (props: { className?: string }) => {
         setIdle()
         break
       case 6:
-        if (status === 1) {
+        if ([2, 7, 8].includes(status)) {
           setResting()
         } else {
-          message.info('小休状态不能手动设置')
+          message.info('不能设置小休状态')
         }
         break
       case 7:
@@ -63,27 +77,14 @@ const StatusBar = (props: { className?: string }) => {
     setPhoneNumber((prev) => prev + digit)
   }
 
-  const handleAgentList = () => {
-    setShowAgentChange(!showAgentChange)
-    getOrgOnlineAgent().then((res: any) => {
-      if (res.code === 0) {
-        setAgentList(res.data)
-      }
-    })
-  }
-
-  useEffect(() => {
-    // 状态码：1: 离线, 2: 在线, 3: 响铃中, 4: 通话中, 5: 呼叫中, 6: 小休中 7:忙碌中 8:整理中
-    // 需要记录时长的状态：2(工作台/在线), 3(响铃中), 4(通话中), 5(呼叫中), 8(整理中)
-    const needTimeCountStatuses = [2, 3, 4, 5, 6, 7, 8]
-
-    setCountTimeAction(TimeAction.Stop)
-    if (needTimeCountStatuses.includes(status)) {
-      setTimeout(() => {
-        setCountTimeAction(TimeAction.Start)
-      }, 500)
-    }
-  }, [status])
+  // const handleAgentList = () => {
+  //   setShowAgentChange(!showAgentChange)
+  //   getOrgOnlineAgent().then((res: any) => {
+  //     if (res.code === 0) {
+  //       setAgentList(res.data)
+  //     }
+  //   })
+  // }
 
   const renderDialpad = () => {
     const digits = [
@@ -97,12 +98,12 @@ const StatusBar = (props: { className?: string }) => {
       <div className="bg-white shadow-xl rounded-xl z-50 w-full border border-gray-100">
         <div className="flex flex-row items-center justify-between p-3 border-b border-gray-100">
           <span className="text-gray-700 font-medium">拨号盘</span>
-          <Button
+          {/* <Button
             type="text"
             shape="circle"
             icon={<UserOutlined className="text-gray-600" />}
             onClick={handleAgentList}
-          />
+          /> */}
         </div>
         <div className="grid grid-cols-3 gap-3 p-4">
           {digits.map((row, rowIndex) =>
@@ -118,10 +119,12 @@ const StatusBar = (props: { className?: string }) => {
           )}
           <div className="flex justify-center col-span-3 mt-2">{renderCallButton({ size: 'large' })}</div>
         </div>
-        {showAgentChange && (
+        {/* {showAgentChange && (
           <div className="border-t border-gray-100 max-h-[350px] overflow-hidden">
             <div className="p-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-sm text-gray-600 font-medium">在线坐席</span>
+              <span className="text-sm text-gray-600 font-medium">
+                在线坐席
+              </span>
               <Button
                 type="text"
                 size="small"
@@ -145,8 +148,12 @@ const StatusBar = (props: { className?: string }) => {
                     {index + 1}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-gray-700 text-sm font-medium">坐席 {agent}</span>
-                    <span className="text-gray-400 text-xs">Extension #{(index + 1).toString().padStart(3, '0')}</span>
+                    <span className="text-gray-700 text-sm font-medium">
+                      坐席 {agent}
+                    </span>
+                    <span className="text-gray-400 text-xs">
+                      Extension #{(index + 1).toString().padStart(3, '0')}
+                    </span>
                   </div>
                   <Button
                     type="text"
@@ -159,7 +166,7 @@ const StatusBar = (props: { className?: string }) => {
               ))}
             </div>
           </div>
-        )}
+        )} */}
       </div>
     )
   }
@@ -170,13 +177,13 @@ const StatusBar = (props: { className?: string }) => {
         size={size}
         type="text"
         shape="circle"
-        disabled={[1, 8, 5, 4, 3].includes(status) || !phoneNumber}
-        icon={
-          <PhoneFilled
-            className={`${![1, 8, 5, 4, 3].includes(status) && phoneNumber ? 'text-green-500' : 'text-gray-300'} flex items-center justify-center`}
-          />
-        }
-        className={`text-xl flex items-center justify-center shadow-lg transition-all duration-200 `}
+        disabled={![2, 6, 7].includes(status) || !phoneNumber}
+        icon={<PhoneFilled className="text-white flex items-center justify-center" />}
+        className={`text-xl flex items-center justify-center shadow-lg transition-all duration-200 ${
+          ![1, 8, 5, 4, 3].includes(status) && phoneNumber
+            ? 'bg-green-500 hover:bg-green-600 active:bg-green-700'
+            : 'bg-gray-300 hover:bg-gray-400'
+        }`}
         onClick={handleMakeCall}
       />
     )
@@ -196,8 +203,9 @@ const StatusBar = (props: { className?: string }) => {
       <div className="flex flex-row items-center gap-3">
         <Select
           className="w-28"
-          disabled={sipState.statusIsCall || sipState.statusIsring || [8, 4, 5, 3].includes(status)}
+          disabled={sipState.statusIsCall || sipState.statusIsring || [8, 4, 5, 3].includes(status) || loginLoading}
           value={status}
+          loading={loginLoading}
           onChange={handleChangeStatus}
           dropdownRender={(menu) => {
             const items = menu?.props?.items?.filter?.((item: any) => ![3, 4, 5, 8].includes(item.value))
@@ -283,8 +291,8 @@ const StatusBar = (props: { className?: string }) => {
           ]}
         />
 
-        <div className="w-[70px] bg-gray-50 rounded-md">
-          <TimeCount action={countTimeAction} />
+        <div className="w-[70px] bg-gray-50 rounded-md flex flex-col items-center">
+          {status !== 1 && <TimeCount action={countTimeAction} />}
         </div>
       </div>
 
@@ -294,8 +302,8 @@ const StatusBar = (props: { className?: string }) => {
           onChange={(e) => setPhoneNumber(e.target.value)}
           disabled={sipState.statusIsCall || sipState.statusIsring}
           className="shadow-sm"
-          onPressEnter={handleMakeCall}
           placeholder="输入电话号码"
+          onPressEnter={handleMakeCall}
           addonBefore={
             <div className="flex items-center justify-center w-[38px] px-1">
               <SignalDisplay width={12} height={12} />

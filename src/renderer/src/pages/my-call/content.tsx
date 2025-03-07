@@ -1,4 +1,4 @@
-import { Tabs, Descriptions, Card, Button } from 'antd'
+import { Tabs, Descriptions, Card, Button, Spin } from 'antd'
 import myCallStore from './my-call-store'
 import { PhoneOutlined } from '@ant-design/icons'
 import useDialpad from '../../components/dialpad/dialpad'
@@ -8,56 +8,67 @@ import { getNumberDetail, getTaskNumberDetail } from '../../api/agent-seat'
 import { getAgentNumberDetail } from '../../api/agent-seat'
 import { convertTimeZone } from '../../utils'
 import useStore from '../../store'
+import { useTranslation } from 'react-i18next'
 
 const MyCallContent = ({ className }: { className?: string }) => {
   const { agentDetail } = useStore()
-  const { currentCustomer, mainTab, callDetail, agentCallDetail, setCallDetail, setAgentCallDetail } = myCallStore()
+  const {
+    currentCustomer,
+    mainTab,
+    callDetail,
+    agentCallDetail,
+    setCallDetail,
+    setAgentCallDetail,
+    setContentLoading,
+    contentLoading
+  } = myCallStore()
   const { makeCall, status } = useDialpad()
+  const { t } = useTranslation()
 
   const renderRecordType = (mainTab: string): any => {
     if (mainTab === 'task') {
       return {
         callType: {
-          1: '呼入',
-          2: '外呼'
+          1: t('descriptions.callType1'),
+          2: t('descriptions.callType2')
         },
         dialType: {
-          1: '标准外呼',
-          2: '任务外呼'
+          1: t('descriptions.dialType1Task'),
+          2: t('descriptions.dialType2Task')
         },
         callResult: {
-          0: '呼叫失败',
-          1: '客户未接听',
-          2: '坐席未接听',
-          3: '双方已接听'
+          0: t('descriptions.callResult0Task'),
+          1: t('descriptions.callResult1Task'),
+          2: t('descriptions.callResult2Task'),
+          3: t('descriptions.callResult3Task')
         },
         hangupType: {
-          0: '用户挂断',
-          1: '系统取消',
-          2: '坐席挂断'
+          0: t('descriptions.hangupType0'),
+          1: t('descriptions.hangupType1'),
+          2: t('descriptions.hangupType2')
         }
       }
     } else {
       return {
         callType: {
-          1: '外呼',
-          2: '呼入',
-          3: '转接'
+          1: t('descriptions.callType2'),
+          2: t('descriptions.callType1'),
+          3: t('descriptions.callType3')
         },
         dialType: {
-          1: '普通外呼',
-          2: '呼入',
-          3: '外呼任务'
+          1: t('descriptions.dialType1Normal'),
+          2: t('descriptions.dialType2Normal'),
+          3: t('descriptions.dialType3Normal')
         },
         callResult: {
-          4: '呼出-客户接通',
-          5: '呼出-客户未接通',
-          6: '呼出-呼叫失败'
+          4: t('descriptions.callResult4Normal'),
+          5: t('descriptions.callResult5Normal'),
+          6: t('descriptions.callResult6Normal')
         },
         hangupType: {
-          0: '用户挂断',
-          1: '系统取消',
-          2: '坐席挂断'
+          0: t('descriptions.hangupType0'),
+          1: t('descriptions.hangupType1'),
+          2: t('descriptions.hangupType2')
         }
       }
     }
@@ -67,67 +78,79 @@ const MyCallContent = ({ className }: { className?: string }) => {
     if (mainTab === 'task') {
       return {
         callType: {
-          1: '外呼',
-          2: '呼入',
-          3: '转接'
+          1: t('descriptions.callType2'),
+          2: t('descriptions.callType1'),
+          3: t('descriptions.callType3')
         },
         callResult: {
-          1: '客户接通',
-          2: '客户拒绝',
-          3: '客户占线',
-          4: '未接听',
-          5: '坐席已接听',
-          6: '坐席未接听且客户挂断'
+          1: t('descriptions.agentCallResult1Task'),
+          2: t('descriptions.agentCallResult2Task'),
+          3: t('descriptions.agentCallResult3Task'),
+          4: t('descriptions.agentCallResult4Task'),
+          5: t('descriptions.agentCallResult5Task'),
+          6: t('descriptions.agentCallResult6Task')
         }
       }
     } else {
       return {
         callType: {
-          1: '外呼',
-          2: '呼入',
-          3: '转接'
+          1: t('descriptions.callType2'),
+          2: t('descriptions.callType1'),
+          3: t('descriptions.callType3')
         },
         callResult: {
-          1: '呼入-客户挂断',
-          2: '呼入-坐席拒绝接听',
-          3: '呼入-坐席已接听',
-          4: '呼出-客户接通',
-          5: '呼出-客户未接通',
-          6: '呼出-呼叫失败',
-          7: '转接-坐席已接听',
-          8: '转接-坐席拒绝接听',
-          9: '转接-客户挂断'
+          1: t('descriptions.agentCallResult1Normal'),
+          2: t('descriptions.agentCallResult2Normal'),
+          3: t('descriptions.agentCallResult3Normal'),
+          4: t('descriptions.agentCallResult4Normal'),
+          5: t('descriptions.agentCallResult5Normal'),
+          6: t('descriptions.agentCallResult6Normal'),
+          7: t('descriptions.agentCallResult7Normal'),
+          8: t('descriptions.agentCallResult8Normal'),
+          9: t('descriptions.agentCallResult9Normal')
         }
       }
     }
   }
 
-  const handleTask = (uuid: string) => {
-    getTaskNumberDetail(uuid).then((r: any) => {
-      if (r.code === 0) {
-        setCallDetail(r.data)
-      }
-    })
+  const handleTask = async (uuid: string) => {
+    setContentLoading(true)
 
-    getTaskAgentNumberDetail(uuid).then((r: any) => {
-      if (r.code === 0) {
-        setAgentCallDetail(r.data)
+    try {
+      const taskNumberResponse: any = await getTaskNumberDetail(uuid)
+      if (taskNumberResponse?.code === 0) {
+        setCallDetail(taskNumberResponse.data)
       }
-    })
+
+      const taskAgentNumberResponse: any = await getTaskAgentNumberDetail(uuid)
+      if (taskAgentNumberResponse?.code === 0) {
+        setAgentCallDetail(taskAgentNumberResponse.data)
+      }
+    } catch (error) {
+      console.error('获取任务详情失败', error)
+    } finally {
+      setContentLoading(false)
+    }
   }
 
-  const handleNormal = (uuid: string) => {
-    getNumberDetail(uuid).then((r: any) => {
-      if (r.code === 0) {
-        setCallDetail(r.data)
-      }
-    })
+  const handleNormal = async (uuid: string) => {
+    setContentLoading(true)
 
-    getAgentNumberDetail(uuid).then((r: any) => {
-      if (r.code === 0) {
-        setAgentCallDetail(r.data)
+    try {
+      const numberResponse: any = await getNumberDetail(uuid)
+      if (numberResponse.code === 0) {
+        setCallDetail(numberResponse.data)
       }
-    })
+
+      const agentNumberResponse: any = await getAgentNumberDetail(uuid)
+      if (agentNumberResponse.code === 0) {
+        setAgentCallDetail(agentNumberResponse.data)
+      }
+    } catch (error) {
+      console.error('获取通话详情失败', error)
+    } finally {
+      setContentLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -143,59 +166,67 @@ const MyCallContent = ({ className }: { className?: string }) => {
   const callDetailItems = [
     {
       key: 'record',
-      label: '通话记录',
+      label: t('descriptions.callRecord'),
       children: (
         <div className="p-6">
-          <Card>
-            <Descriptions title="基础信息" column={2}>
-              <Descriptions.Item label="呼叫类型">
+          <Card loading={contentLoading}>
+            <Descriptions title={t('descriptions.basicInfo')} column={2}>
+              <Descriptions.Item label={t('descriptions.callType')}>
                 {callDetail?.callType !== undefined && renderRecordType(mainTab)?.callType[callDetail?.callType]}
               </Descriptions.Item>
-              <Descriptions.Item label="拨号类型">
+              <Descriptions.Item label={t('descriptions.dialType')}>
                 {callDetail?.dialType !== undefined && renderRecordType(mainTab)?.dialType[callDetail?.dialType]}
               </Descriptions.Item>
-              <Descriptions.Item label="客户电话">{callDetail?.customerPhone}</Descriptions.Item>
-              <Descriptions.Item label="坐席电话">{callDetail?.agentPhone}</Descriptions.Item>
-              <Descriptions.Item label="首次接听坐席">{callDetail?.firstCallAgent}</Descriptions.Item>
+              <Descriptions.Item label={t('descriptions.customerPhone')}>{callDetail?.customerPhone}</Descriptions.Item>
+              <Descriptions.Item label={t('descriptions.agentPhone')}>{callDetail?.agentPhone}</Descriptions.Item>
+              <Descriptions.Item label={t('descriptions.firstCallAgent')}>
+                {callDetail?.firstCallAgent}
+              </Descriptions.Item>
             </Descriptions>
 
-            <Descriptions title="通话信息" column={2} className="mt-4">
-              <Descriptions.Item label="开始时间">
+            <Descriptions title={t('descriptions.callInfo')} column={2} className="mt-4">
+              <Descriptions.Item label={t('descriptions.beginTime')}>
                 {callDetail?.beginTime ? convertTimeZone(agentDetail?.org?.timezone, callDetail?.beginTime, true) : '-'}
               </Descriptions.Item>
-              <Descriptions.Item label="结束时间">
+              <Descriptions.Item label={t('descriptions.endTime')}>
                 {callDetail?.endTime ? convertTimeZone(agentDetail?.org?.timezone, callDetail?.endTime, true) : '-'}
               </Descriptions.Item>
-              <Descriptions.Item label="振铃时间">
+              <Descriptions.Item label={t('descriptions.ringTime')}>
                 {callDetail?.ringTime ? convertTimeZone(agentDetail?.org?.timezone, callDetail?.ringTime, true) : '-'}
               </Descriptions.Item>
-              <Descriptions.Item label="接听时间">
+              <Descriptions.Item label={t('descriptions.answerTime')}>
                 {callDetail?.answerTime
                   ? convertTimeZone(agentDetail?.org?.timezone, callDetail?.answerTime, true)
                   : '-'}
               </Descriptions.Item>
-              <Descriptions.Item label="振铃时长">
-                {callDetail?.ringDuration !== undefined ? `${callDetail.ringDuration}秒` : '-'}
+              <Descriptions.Item label={t('descriptions.ringDuration')}>
+                {callDetail?.ringDuration !== undefined && callDetail.talkDuration !== null
+                  ? `${callDetail.ringDuration}${t('descriptions.seconds')}`
+                  : '-'}
               </Descriptions.Item>
-              <Descriptions.Item label="通话时长">
-                {callDetail?.talkDuration !== undefined ? `${callDetail.talkDuration}秒` : '-'}
+              <Descriptions.Item label={t('descriptions.talkDuration')}>
+                {callDetail?.talkDuration !== undefined && callDetail.talkDuration !== null
+                  ? `${callDetail.talkDuration}${t('descriptions.seconds')}`
+                  : '-'}
               </Descriptions.Item>
-              <Descriptions.Item label="总时长">
-                {callDetail?.callDuration !== undefined ? `${callDetail.callDuration}秒` : '-'}
+              <Descriptions.Item label={t('descriptions.totalDuration')}>
+                {callDetail?.callDuration !== undefined && callDetail.callDuration !== null
+                  ? `${callDetail.callDuration}${t('descriptions.seconds')}`
+                  : '-'}
               </Descriptions.Item>
             </Descriptions>
 
-            <Descriptions title="结果信息" column={2} className="mt-4">
-              <Descriptions.Item label="通话结果">
+            <Descriptions title={t('descriptions.resultInfo')} column={2} className="mt-4">
+              <Descriptions.Item label={t('descriptions.callResult')}>
                 {callDetail?.callResult !== undefined && renderRecordType(mainTab)?.callResult[callDetail?.callResult]}
               </Descriptions.Item>
-              <Descriptions.Item label="挂断类型">
+              <Descriptions.Item label={t('descriptions.hangupType')}>
                 {callDetail?.hangupType !== undefined && renderRecordType(mainTab)?.hangupType[callDetail?.hangupType]}
               </Descriptions.Item>
-              <Descriptions.Item label="录音" className="text-center w-full">
+              <Descriptions.Item label={t('descriptions.recording')} className="text-center w-full">
                 {callDetail?.recordUrl && (
                   <audio controls src={callDetail.recordUrl} className="w-full">
-                    您的浏览器不支持音频播放
+                    {t('descriptions.browserNotSupport')}
                   </audio>
                 )}
               </Descriptions.Item>
@@ -206,40 +237,44 @@ const MyCallContent = ({ className }: { className?: string }) => {
     },
     {
       key: 'callDetail',
-      label: '坐席通话明细',
+      label: t('descriptions.agentCallDetail'),
       children: (
         <div className="p-6">
-          <Card>
+          <Card loading={contentLoading}>
             {agentCallDetail?.map((detail, index) => (
-              <div key={detail.uuid} className={`${index > 0 ? 'mt-8 pt-8 border-t' : ''}`}>
+              <div key={index} className={`${index > 0 ? 'mt-8 pt-8 border-t' : ''}`}>
                 <Descriptions
                   column={2}
                   colon={false}
                   className="mb-4"
-                  title={`${convertTimeZone(agentDetail?.org?.timezone, detail.beginTime, true)}`}
+                  title={`${convertTimeZone(agentDetail?.org?.timezone, detail?.beginTime, true)}`}
                 >
-                  <Descriptions.Item label="通话类型">
+                  <Descriptions.Item label={t('descriptions.callType')}>
                     {detail.callType !== undefined && renderAgentType()?.callType[detail.callType]}
                   </Descriptions.Item>
-                  <Descriptions.Item label="坐席" labelStyle={{ fontWeight: 500 }}>
+                  <Descriptions.Item label={t('descriptions.agent')} labelStyle={{ fontWeight: 500 }}>
                     {detail.agent}
                   </Descriptions.Item>
-                  <Descriptions.Item label="振铃时间" labelStyle={{ fontWeight: 500 }}>
-                    {detail.ringTime ? convertTimeZone(agentDetail?.org?.timezone, detail.ringTime, true) : '-'}
+                  <Descriptions.Item label={t('descriptions.ringTime')} labelStyle={{ fontWeight: 500 }}>
+                    {detail?.ringTime ? convertTimeZone(agentDetail?.org?.timezone, detail.ringTime, true) : '-'}
                   </Descriptions.Item>
-                  <Descriptions.Item label="接听时间" labelStyle={{ fontWeight: 500 }}>
+                  <Descriptions.Item label={t('descriptions.answerTime')} labelStyle={{ fontWeight: 500 }}>
                     {detail.answerTime ? convertTimeZone(agentDetail?.org?.timezone, detail?.answerTime, true) : '-'}
                   </Descriptions.Item>
-                  <Descriptions.Item label="结束时间" labelStyle={{ fontWeight: 500 }}>
+                  <Descriptions.Item label={t('descriptions.endTime')} labelStyle={{ fontWeight: 500 }}>
                     {detail.endTime ? convertTimeZone(agentDetail?.org?.timezone, detail.endTime, true) : '-'}
                   </Descriptions.Item>
-                  <Descriptions.Item label="通话时长" labelStyle={{ fontWeight: 500 }}>
-                    {detail.talkDuration ? `${detail.talkDuration} 秒` : ''}
+                  <Descriptions.Item label={t('descriptions.talkDuration')} labelStyle={{ fontWeight: 500 }}>
+                    {detail.talkDuration !== undefined && detail.talkDuration !== null
+                      ? `${detail.talkDuration}${t('descriptions.seconds')}`
+                      : '-'}
                   </Descriptions.Item>
-                  <Descriptions.Item label="总时长" labelStyle={{ fontWeight: 500 }}>
-                    {detail.callDuration ? `${detail.callDuration} 秒` : ''}
+                  <Descriptions.Item label={t('descriptions.totalDuration')} labelStyle={{ fontWeight: 500 }}>
+                    {detail.callDuration !== undefined && detail.callDuration !== null
+                      ? `${detail.callDuration}${t('descriptions.seconds')}`
+                      : '-'}
                   </Descriptions.Item>
-                  <Descriptions.Item label="通话结果" labelStyle={{ fontWeight: 500 }}>
+                  <Descriptions.Item label={t('descriptions.callResult')} labelStyle={{ fontWeight: 500 }}>
                     {detail.callResult !== undefined && renderAgentType()?.callResult[detail.callResult]}
                   </Descriptions.Item>
                 </Descriptions>
@@ -254,17 +289,27 @@ const MyCallContent = ({ className }: { className?: string }) => {
   const items = [
     {
       key: 'customer',
-      label: '客户',
+      label: t('descriptions.customer'),
       children: (
         <div className="p-6">
-          <Card>
-            <Descriptions title="客户资料" column={2}>
-              <Descriptions.Item label="Phone">{currentCustomer?.phone}</Descriptions.Item>
-              <Descriptions.Item label="Begin Time">
+          <Card loading={contentLoading}>
+            <Descriptions title={t('descriptions.customerInfo')} column={2}>
+              <Descriptions.Item label={t('descriptions.customerName')}>-</Descriptions.Item>
+              <Descriptions.Item label={t('descriptions.phone')}>{currentCustomer?.phone}</Descriptions.Item>
+              <Descriptions.Item label={t('descriptions.sex')}>-</Descriptions.Item>
+              <Descriptions.Item label={t('descriptions.mail')}>-</Descriptions.Item>
+              <Descriptions.Item label={t('descriptions.platform')}>-</Descriptions.Item>
+              <Descriptions.Item label={t('descriptions.remark')}>-</Descriptions.Item>
+
+              {/* <Descriptions.Item label="Begin Time">
                 {currentCustomer?.beginTime
-                  ? convertTimeZone(agentDetail?.org?.timezone, currentCustomer?.beginTime, true)
+                  ? convertTimeZone(
+                      agentDetail?.org?.timezone,
+                      currentCustomer?.beginTime,
+                      true
+                    )
                   : '-'}
-              </Descriptions.Item>
+              </Descriptions.Item> */}
             </Descriptions>
           </Card>
         </div>
@@ -272,7 +317,7 @@ const MyCallContent = ({ className }: { className?: string }) => {
     },
     {
       key: 'call',
-      label: '通话详情',
+      label: t('descriptions.callDetail'),
       children: (
         <div>
           <Tabs
@@ -292,30 +337,32 @@ const MyCallContent = ({ className }: { className?: string }) => {
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
-      <div className="p-4 border-b flex justify-between items-center">
-        <h1 className="text-xl font-medium">{currentCustomer?.phone}</h1>
-        <Button
-          icon={<PhoneOutlined />}
-          variant="outlined"
-          className="border-gray-300"
-          disabled={status !== 2}
-          onClick={() => {
-            if (currentCustomer?.phone) {
-              makeCall(currentCustomer?.phone)
-            }
+      <Spin spinning={contentLoading}>
+        <div className="p-4 border-b flex justify-between items-center">
+          <h1 className="text-xl font-medium">{currentCustomer?.phone}</h1>
+          <Button
+            icon={<PhoneOutlined />}
+            variant="outlined"
+            className="border-gray-300"
+            disabled={![2, 6, 7].includes(status)}
+            onClick={() => {
+              if (currentCustomer?.phone) {
+                makeCall(currentCustomer?.phone)
+              }
+            }}
+          />
+        </div>
+        <Tabs
+          defaultActiveKey="call"
+          items={items}
+          className="flex-1 px-0"
+          tabBarStyle={{
+            padding: '0 16px',
+            marginBottom: 0,
+            borderBottom: '1px solid #f0f0f0'
           }}
         />
-      </div>
-      <Tabs
-        defaultActiveKey="call"
-        items={items}
-        className="flex-1 px-0"
-        tabBarStyle={{
-          padding: '0 16px',
-          marginBottom: 0,
-          borderBottom: '1px solid #f0f0f0'
-        }}
-      />
+      </Spin>
     </div>
   )
 }

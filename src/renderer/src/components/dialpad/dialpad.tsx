@@ -3,8 +3,9 @@ import SipClient from 'sip-call-ring'
 import { message } from 'antd'
 import { TimeAction } from './time-count'
 import myCallStore from '../../pages/my-call/my-call-store'
-import { useCheckRouteIsMyCall } from './utils'
+import { checkRouteIsMyCall } from './utils'
 import { logout } from '../../utils'
+import { persist } from 'zustand/middleware'
 
 type Store = {
   sipInstance: SipClient | null
@@ -15,14 +16,16 @@ type Store = {
   disableMic: boolean
   status: number // 1: 离线, 2: 在线, 3: 响铃中, 4: 通话中, 5: 呼叫中, 6: 小休中 7:忙碌中 8:整理中
   lantencyStat: any | undefined
+  loginLoading: boolean
   countTimeAction: TimeAction
   discallee: string
   callbackInfo: any
   tidyTime: number
-  groupCallInfo: {
+  groupCallInfo: Array<{
     process: {
       type: number
       taskCode: string
+      taskName: string
       data: {
         completedCount: number
         totalCount: number
@@ -30,7 +33,7 @@ type Store = {
       }
     }
     status: number
-  }
+  }>
   loginInfo: any
   currentCallNumber: string
   countCallAction: number
@@ -91,417 +94,460 @@ type Action = {
   setNavigate: (navigate: any) => void
 }
 
-const useDialpad = create<Store & Action>((set, get) => ({
-  sipInstance: null,
-  loading: false,
-  logStatus: false,
-  status: 1,
-  loginInfo: {},
-  currentCallNumber: '',
-  reloadCallRecord: false,
-  sipState: {
-    statusIsring: false,
-    statusIsCall: false,
-    callDirection: '',
-    agentNo: '',
-    discaller: '',
-    discallee: '',
-    historyAccounts: [],
-    lastAccount: '',
-    networkSpeed: 0,
-    testMicrophoneOb: null,
-    testMicrophoneVolume: 0,
-    mediaDevices: null,
-    autoAnswer: false,
-    autoDisableMic: false,
-    loading: null,
-    locale: 'zh',
-    locales: [],
-    callEndInfo: undefined
-  },
-  tidyTime: 0,
-  statusIsHold: false,
-  disableMic: false,
-  lantencyStat: undefined,
-  countTimeAction: TimeAction.Stop,
-  countCallAction: TimeAction.Stop,
-  discallee: '',
-  callbackInfo: {},
-  groupCallInfo: {
-    process: {
-      type: 0,
-      taskCode: '',
-      data: {
-        completedCount: 0,
-        totalCount: 0,
-        customerAnsweredCount: 0
-      }
-    },
-    status: 0
-  },
-  navigate: null,
-  setNavigate: (navigate: any) => set({ navigate }),
-  setSipState: (state: any) => {
-    set({
-      sipState: state
-    })
-  },
-  setLoginInfo: (loginInfo: any) => {
-    set({ loginInfo })
-  },
-  reLogin: () => {
-    if (get().loginInfo) {
-      set({
-        loginInfo: get().loginInfo,
-        sipInstance: new SipClient({
-          ...get().loginInfo,
-          stateEventListener: get().setEventListener,
-          statusListener: (status: number) => {
-            console.log('status--->', status)
-            set({ status })
-          },
-          callbackInfo: (info: any) => {
-            console.log('callbackInfo--->', info)
-            set({ callbackInfo: info })
-          },
-          groupCallNotify: (info: any) => {
-            console.log('groupCallInfo--->', info)
-            if (info?.type == 2) {
-              set({
-                groupCallInfo: {
-                  process: info,
-                  status: get().groupCallInfo.status
-                }
-              })
-            }
-
-            if (info?.type == 1) {
-              set({
-                groupCallInfo: {
-                  process: get().groupCallInfo.process,
-                  status: info?.data?.status
-                }
-              })
-            }
-          },
-          otherEvent: (info: any) => {
-            const { setMainTab, fetchTaskData } = myCallStore.getState()
-            if (info?.action === 'currentCallUuid') {
-              // eslint-disable-next-line react-hooks/rules-of-hooks
-              const isMyCallRoute = useCheckRouteIsMyCall()
-              if (!isMyCallRoute) {
-                get().navigate('/agent-my-call')
-              }
-              if (info?.content?.callType && info?.content?.callUuid) {
-                set({
-                  reloadCallRecord: !get().reloadCallRecord
-                })
-                if (info?.content?.callType !== 'GROUP_CALL') {
-                  setMainTab('normal')
-                } else {
-                  setMainTab('task')
-                }
-                fetchTaskData()
-              }
-            }
-
-            if (info.action === 'warpUpTimeNotify') {
-              set({
-                tidyTime: info.content
-              })
-            }
-          },
-          kick: () => {
-            message.error('您的账号已在其他设备登录，您已被强制下线。')
-            setTimeout(() => {
-              logout()
-            }, 2000)
-          }
-        })
-      })
-    }
-  },
-  setSipInstance: (loginInfo: any) => {
-    if (loginInfo) {
-      set({
-        loginInfo,
-        sipInstance: new SipClient({
-          ...loginInfo,
-          stateEventListener: get().setEventListener,
-          statusListener: (status: number) => {
-            console.log('status--->', status)
-            set({ status })
-          },
-          callbackInfo: (info: any) => {
-            console.log('callbackInfo--->', info)
-            set({ callbackInfo: info })
-          },
-          groupCallNotify: (info: any) => {
-            console.log('groupCallInfo--->', info)
-            if (info?.type == 2) {
-              set({
-                groupCallInfo: {
-                  process: info,
-                  status: get().groupCallInfo.status
-                }
-              })
-            }
-
-            if (info?.type == 1) {
-              set({
-                groupCallInfo: {
-                  process: get().groupCallInfo.process,
-                  status: info?.data?.status
-                }
-              })
-            }
-          },
-          otherEvent: (info: any) => {
-            const { setMainTab, fetchTaskData } = myCallStore.getState()
-            if (info?.action === 'currentCallUuid') {
-              // eslint-disable-next-line react-hooks/rules-of-hooks
-              const isMyCallRoute = useCheckRouteIsMyCall()
-              if (!isMyCallRoute) {
-                get().navigate('/agent-my-call')
-              }
-              if (info?.content?.callType && info?.content?.callUuid) {
-                set({
-                  reloadCallRecord: !get().reloadCallRecord
-                })
-                if (info?.content?.callType !== 'GROUP_CALL') {
-                  setMainTab('normal')
-                } else {
-                  setMainTab('task')
-                }
-                fetchTaskData()
-              }
-            }
-
-            if (info.action === 'warpUpTimeNotify') {
-              set({
-                tidyTime: info.content
-              })
-            }
-          },
-          kick: () => {
-            message.error('您的账号已在其他设备登录，您已被强制下线。')
-            setTimeout(() => {
-              logout()
-            }, 2000)
-          }
-        })
-      })
-    }
-  },
-  setEventListener: (event: any, data: any) => {
-    console.log('收到事件', event, data)
-    switch (event) {
-      case 'ERROR':
-        set({ loading: false })
-        break
-      case 'DISCONNECTED':
-        set({ logStatus: false, loading: false })
-        message.info('Disconnected')
-        break
-      case 'REGISTERED':
-        set({ logStatus: true, loading: false })
-        set({
-          sipState: {
-            ...get().sipState,
-            agentNo: data.localAgent
-          }
-        })
-        break
-      case 'UNREGISTERED':
-        set({
-          sipState: {
-            ...get().sipState,
-            statusIsring: false,
-            statusIsCall: false,
-            callEndInfo: undefined
-          },
-          statusIsHold: false,
-          disableMic: false,
-          currentCallNumber: '',
-          lantencyStat: undefined,
-          logStatus: false,
-          status: 1
-        })
-        break
-      case 'INCOMING_CALL':
-        set({
-          sipState: {
-            ...get().sipState,
-            callEndInfo: undefined,
-            statusIsring: true,
-            callDirection: data.direction
-          },
-          currentCallNumber: data.otherLegNumber
-        })
-        if (get().sipState.autoAnswer) {
-          //自动应答
-          get().sipInstance?.answer()
-        }
-        break
-      // this.playRingMedia();
-      case 'OUTGOING_CALL':
-        set({
-          sipState: {
-            ...get().sipState,
-            callEndInfo: undefined,
-            statusIsring: true,
-            callDirection: data.direction,
-            discaller: data.otherLegNumber
-          },
-          currentCallNumber: data.otherLegNumber,
-          discallee: get().sipState.agentNo,
-          countCallAction: TimeAction.Start
-        })
-        break
-      case 'IN_CALL':
-        if (get().sipState.autoDisableMic) {
-          //自动禁音
-          get().sipInstance?.mute()
-        }
-        set({
-          sipState: {
-            ...get().sipState,
-            statusIsring: false,
-            statusIsCall: true
-          },
-          countCallAction: TimeAction.Start
-        })
-        break
-      case 'CALL_END':
-        set({
-          sipState: {
-            ...get().sipState,
-            statusIsring: false,
-            statusIsCall: false,
-            callEndInfo: data
-          },
-          currentCallNumber: '',
-          callbackInfo: {},
-          statusIsHold: false,
-          disableMic: false,
-          lantencyStat: undefined,
-          countCallAction: TimeAction.Stop,
-          reloadCallRecord: !get().reloadCallRecord
-        })
-        break
-      case 'HOLD':
-        set({
-          statusIsHold: true
-        })
-        break
-      case 'UNHOLD':
-        set({
-          statusIsHold: false
-        })
-        break
-      case 'MUTE':
-        set({
-          disableMic: true
-        })
-        break
-      case 'UNMUTE':
-        set({
-          disableMic: false
-        })
-        break
-      case 'CONNECTED':
-        set({
-          loading: false
-        })
-        break
-      case 'DISCONNECT':
-        console.log('DISCONNECT', data.msg)
-        break
-      case 'RECONNECT':
-        break
-      case 'REGISTER_FAILED':
-        set({ logStatus: false, loading: false })
-        message.error('Register failed')
-        break
-      case 'LATENCY_STAT':
-        set({ lantencyStat: data })
-        break
-      case 'MIC_ERROR':
-        message.error(data.msg)
-        break
-      default:
-    }
-  },
-  setCountTimeAction: (action: TimeAction) => {
-    set({ countTimeAction: action })
-  },
-  setCountCallAction: (action: TimeAction) => {
-    set({ countCallAction: action })
-  },
-  transferCall: async (num: string) => {
-    return get().sipInstance?.transferCall(num)
-  },
-  makeCall: (num: string) => {
-    get().sipInstance?.call(num)
-  },
-  setResting: () => {
-    get().sipInstance?.setResting()
-  },
-  setIdle: () => {
-    get().sipInstance?.setIdle()
-  },
-  setBusy: () => {
-    get().sipInstance?.setBusy()
-  },
-  answerCall: () => {
-    get().sipInstance?.answer()
-  },
-  holdCall: () => {
-    get().sipInstance?.hold()
-  },
-  unholdCall: () => {
-    get().sipInstance?.unhold()
-  },
-  hangupCall: () => {
-    get().sipInstance?.hangup()
-  },
-  muteCall: () => {
-    get().sipInstance?.mute()
-  },
-  unmuteCall: () => {
-    get().sipInstance?.unmute()
-  },
-  wrapUp: (seconds: number) => {
-    get().sipInstance?.wrapUp(seconds)
-  },
-  wrapUpEnd: () => {
-    get().sipInstance?.wrapUpCancel()
-  },
-  getOrgOnlineAgent: async () => {
-    return get().sipInstance?.getOrgOnlineAgent()
-  },
-  logout: () => {
-    get().sipInstance?.unregister()
-    set({
-      callbackInfo: {},
-      groupCallInfo: {
-        process: {
-          type: 0,
-          taskCode: '',
-          data: {
-            completedCount: 0,
-            totalCount: 0,
-            customerAnsweredCount: 0
-          }
-        },
-        status: 0
-      },
+const useDialpad = create<Store & Action>()(
+  persist(
+    (set, get) => ({
       sipInstance: null,
+      loading: false,
+      logStatus: false,
       status: 1,
+      loginInfo: {},
+      loginLoading: false,
       currentCallNumber: '',
-      reloadCallRecord: false
-    })
-  }
-}))
+      reloadCallRecord: false,
+      sipState: {
+        statusIsring: false,
+        statusIsCall: false,
+        callDirection: '',
+        agentNo: '',
+        discaller: '',
+        discallee: '',
+        historyAccounts: [],
+        lastAccount: '',
+        networkSpeed: 0,
+        testMicrophoneOb: null,
+        testMicrophoneVolume: 0,
+        mediaDevices: null,
+        autoAnswer: false,
+        autoDisableMic: false,
+        loading: null,
+        locale: 'zh',
+        locales: [],
+        callEndInfo: undefined
+      },
+      tidyTime: 0,
+      statusIsHold: false,
+      disableMic: false,
+      lantencyStat: undefined,
+      countTimeAction: TimeAction.Stop,
+      countCallAction: TimeAction.Stop,
+      discallee: '',
+      callbackInfo: {},
+      groupCallInfo: [],
+      navigate: null,
+      setNavigate: (navigate: any) => set({ navigate }),
+      setSipState: (state: any) => {
+        set({
+          sipState: state
+        })
+      },
+      setLoginInfo: (loginInfo: any) => {
+        set({ loginInfo })
+      },
+      reLogin: () => {
+        if (get().loginInfo) {
+          set({
+            loginInfo: get().loginInfo,
+            loginLoading: true,
+            sipInstance: new SipClient({
+              ...get().loginInfo,
+              stateEventListener: get().setEventListener,
+              statusListener: (status: number) => {
+                console.log('status--->', status)
+                set({ status, loginLoading: false })
+              },
+              callbackInfo: (info: any) => {
+                console.log('callbackInfo--->', info)
+                set({ callbackInfo: info })
+              },
+              groupCallNotify: (info: any) => {
+                console.log('groupCallInfo--->', info)
+                const currentGroupCallInfo = [...get().groupCallInfo]
+
+                if (info?.type == 2 && info?.taskCode) {
+                  // 查找是否已存在相同 taskCode 的任务
+                  const existingIndex = currentGroupCallInfo.findIndex(
+                    (item) => item.process.taskCode === info.taskCode
+                  )
+
+                  if (existingIndex >= 0) {
+                    // 更新已存在的任务数据
+                    currentGroupCallInfo[existingIndex] = {
+                      ...currentGroupCallInfo[existingIndex],
+                      process: info
+                    }
+                  } else {
+                    // 添加新任务
+                    currentGroupCallInfo.push({
+                      process: info,
+                      status: 0
+                    })
+                  }
+
+                  set({ groupCallInfo: currentGroupCallInfo })
+                }
+
+                if (info?.type == 1 && info?.data?.taskCode) {
+                  // 查找是否已存在相同 taskCode 的任务
+                  const existingIndex = currentGroupCallInfo.findIndex(
+                    (item) => item.process.taskCode === info.data.taskCode
+                  )
+
+                  if (existingIndex >= 0) {
+                    // 更新已存在的任务状态
+                    currentGroupCallInfo[existingIndex] = {
+                      ...currentGroupCallInfo[existingIndex],
+                      status: info?.data?.status
+                    }
+
+                    set({ groupCallInfo: currentGroupCallInfo })
+                  }
+                }
+              },
+              otherEvent: (info: any) => {
+                const { setMainTab, fetchTaskData, setCurrentTempCall } = myCallStore.getState()
+                if (info?.action === 'currentCallUuid') {
+                  const isMyCallRoute = checkRouteIsMyCall()
+                  if (!isMyCallRoute) {
+                    get().navigate('/agent-my-call')
+                  }
+                  if (info?.content?.callType && info?.content?.callUuid) {
+                    set({
+                      reloadCallRecord: !get().reloadCallRecord
+                    })
+                    setCurrentTempCall(info?.content)
+                    console.log('currentCallUuid--->', info?.content)
+                    if (info?.content?.callType !== 'GROUP_CALL') {
+                      setMainTab('normal')
+                    } else {
+                      setMainTab('task')
+                    }
+                    fetchTaskData()
+                  }
+                }
+
+                if (info.action === 'warpUpTimeNotify') {
+                  set({
+                    tidyTime: info.content
+                  })
+                }
+              },
+              kick: () => {
+                message.error('您的账号已在其他设备登录，您已被强制下线。')
+                setTimeout(() => {
+                  logout()
+                }, 2000)
+              }
+            })
+          })
+        }
+      },
+      setSipInstance: (loginInfo: any) => {
+        if (loginInfo) {
+          set({
+            loginInfo,
+            loginLoading: true,
+            sipInstance: new SipClient({
+              ...loginInfo,
+              stateEventListener: get().setEventListener,
+              statusListener: (status: number) => {
+                console.log('status--->', status)
+                set({ status, loginLoading: false })
+              },
+              callbackInfo: (info: any) => {
+                console.log('callbackInfo--->', info)
+                set({ callbackInfo: info })
+              },
+              groupCallNotify: (info: any) => {
+                console.log('groupCallInfo--->', info)
+                const currentGroupCallInfo = [...get().groupCallInfo]
+
+                if (info?.type == 2 && info?.taskCode) {
+                  // 查找是否已存在相同 taskCode 的任务
+                  const existingIndex = currentGroupCallInfo.findIndex(
+                    (item) => item.process.taskCode === info.taskCode
+                  )
+
+                  if (existingIndex >= 0) {
+                    // 更新已存在的任务数据
+                    currentGroupCallInfo[existingIndex] = {
+                      ...currentGroupCallInfo[existingIndex],
+                      process: info
+                    }
+                  } else {
+                    // 添加新任务
+                    currentGroupCallInfo.push({
+                      process: info,
+                      status: 0
+                    })
+                  }
+
+                  set({ groupCallInfo: currentGroupCallInfo })
+                }
+
+                if (info?.type == 1 && info?.data?.taskCode) {
+                  // 查找是否已存在相同 taskCode 的任务
+                  const existingIndex = currentGroupCallInfo.findIndex(
+                    (item) => item.process.taskCode === info.data.taskCode
+                  )
+
+                  if (existingIndex >= 0) {
+                    // 更新已存在的任务状态
+                    currentGroupCallInfo[existingIndex] = {
+                      ...currentGroupCallInfo[existingIndex],
+                      status: info?.data?.status
+                    }
+
+                    set({ groupCallInfo: currentGroupCallInfo })
+                  }
+                }
+              },
+              otherEvent: (info: any) => {
+                const { setMainTab, fetchTaskData, setCurrentTempCall } = myCallStore.getState()
+                if (info?.action === 'currentCallUuid') {
+                  const isMyCallRoute = checkRouteIsMyCall()
+                  if (!isMyCallRoute) {
+                    get().navigate('/agent-my-call')
+                  }
+                  if (info?.content?.callType && info?.content?.callUuid) {
+                    set({
+                      reloadCallRecord: !get().reloadCallRecord
+                    })
+                    setCurrentTempCall(info?.content)
+                    console.log('currentCallUuid--->', info?.content)
+                    if (info?.content?.callType !== 'GROUP_CALL') {
+                      setMainTab('normal')
+                    } else {
+                      setMainTab('task')
+                    }
+                    fetchTaskData()
+                  }
+                }
+
+                if (info.action === 'warpUpTimeNotify') {
+                  set({
+                    tidyTime: info.content
+                  })
+                }
+              },
+              kick: () => {
+                message.error('您的账号已在其他设备登录，您已被强制下线。')
+                setTimeout(() => {
+                  logout()
+                }, 2000)
+              }
+            })
+          })
+        }
+      },
+      setEventListener: (event: any, data: any) => {
+        const { setCurrentTempCall } = myCallStore.getState()
+
+        console.log('收到事件', event, data)
+        switch (event) {
+          case 'ERROR':
+            set({ loading: false })
+            break
+          case 'DISCONNECTED':
+            set({ logStatus: false, loading: false })
+            message.info('Disconnected')
+            break
+          case 'REGISTERED':
+            set({ logStatus: true, loading: false })
+            set({
+              sipState: {
+                ...get().sipState,
+                agentNo: data.localAgent
+              }
+            })
+            break
+          case 'UNREGISTERED':
+            set({
+              sipState: {
+                ...get().sipState,
+                statusIsring: false,
+                statusIsCall: false,
+                callEndInfo: undefined
+              },
+              statusIsHold: false,
+              disableMic: false,
+              currentCallNumber: '',
+              lantencyStat: undefined,
+              logStatus: false,
+              status: 1
+            })
+            break
+          case 'INCOMING_CALL':
+            set({
+              sipState: {
+                ...get().sipState,
+                callEndInfo: undefined,
+                statusIsring: true,
+                callDirection: data.direction
+              },
+              currentCallNumber: data.otherLegNumber
+            })
+            if (get().sipState.autoAnswer) {
+              //自动应答
+              get().sipInstance?.answer()
+            }
+            break
+          // this.playRingMedia();
+          case 'OUTGOING_CALL':
+            set({
+              sipState: {
+                ...get().sipState,
+                callEndInfo: undefined,
+                statusIsring: true,
+                callDirection: data.direction,
+                discaller: data.otherLegNumber
+              },
+              discallee: get().sipState.agentNo,
+              currentCallNumber: data.otherLegNumber,
+              countCallAction: TimeAction.Start
+            })
+            break
+          case 'IN_CALL':
+            if (get().sipState.autoDisableMic) {
+              //自动禁音
+              get().sipInstance?.mute()
+            }
+            set({
+              sipState: {
+                ...get().sipState,
+                statusIsring: false,
+                statusIsCall: true
+              }
+            })
+            break
+          case 'CALL_END':
+            set({
+              sipState: {
+                ...get().sipState,
+                statusIsring: false,
+                statusIsCall: false,
+                callEndInfo: data
+              },
+              currentCallNumber: '',
+              callbackInfo: {},
+              disableMic: false,
+              lantencyStat: undefined,
+              countCallAction: TimeAction.Stop,
+              statusIsHold: false,
+              reloadCallRecord: !get().reloadCallRecord
+            })
+            setCurrentTempCall(null)
+            break
+          case 'HOLD':
+            set({
+              statusIsHold: true
+            })
+            break
+          case 'UNHOLD':
+            set({
+              statusIsHold: false
+            })
+            break
+          case 'MUTE':
+            set({
+              disableMic: true
+            })
+            break
+          case 'UNMUTE':
+            set({
+              disableMic: false
+            })
+            break
+          case 'CONNECTED':
+            set({
+              loading: false
+            })
+            break
+          case 'DISCONNECT':
+            console.log('DISCONNECT', data.msg)
+            break
+          case 'RECONNECT':
+            break
+          case 'REGISTER_FAILED':
+            set({ logStatus: false, loading: false })
+            message.error('Register failed')
+            break
+          case 'LATENCY_STAT':
+            set({ lantencyStat: data })
+            break
+          case 'MIC_ERROR':
+            message.error(data.msg)
+            break
+          default:
+        }
+      },
+      setCountTimeAction: (action: TimeAction) => {
+        set({ countTimeAction: action })
+      },
+      setCountCallAction: (action: TimeAction) => {
+        set({ countCallAction: action })
+      },
+      transferCall: async (num: string) => {
+        return get().sipInstance?.transferCall(num)
+      },
+      makeCall: (num: string) => {
+        get().sipInstance?.call(num)
+      },
+      setResting: () => {
+        get().sipInstance?.setResting()
+      },
+      setIdle: () => {
+        get().sipInstance?.setIdle()
+      },
+      setBusy: () => {
+        get().sipInstance?.setBusy()
+      },
+      answerCall: () => {
+        get().sipInstance?.answer()
+      },
+      holdCall: () => {
+        get().sipInstance?.hold()
+      },
+      unholdCall: () => {
+        get().sipInstance?.unhold()
+      },
+      hangupCall: () => {
+        get().sipInstance?.hangup()
+      },
+      muteCall: () => {
+        get().sipInstance?.mute()
+      },
+      unmuteCall: () => {
+        get().sipInstance?.unmute()
+      },
+      wrapUp: (seconds: number) => {
+        get().sipInstance?.wrapUp(seconds)
+      },
+      wrapUpEnd: () => {
+        get().sipInstance?.wrapUpCancel()
+      },
+      getOrgOnlineAgent: async () => {
+        return get().sipInstance?.getOrgOnlineAgent()
+      },
+      logout: () => {
+        get().sipInstance?.unregister()
+        set({
+          callbackInfo: {},
+          sipInstance: null,
+          status: 1,
+          currentCallNumber: '',
+          reloadCallRecord: false
+        })
+      }
+    }),
+    {
+      name: 'dialpad-storage',
+      partialize: (state) => ({
+        groupCallInfo: state.groupCallInfo,
+        loginInfo: state.loginInfo
+      })
+    }
+  )
+)
 
 export default useDialpad

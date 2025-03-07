@@ -1,10 +1,11 @@
 import { callOutIcon, callInIcon } from './call-icon'
-import { useEffect } from 'react'
-import { Input, Pagination, Select, Tag, Space, Tooltip } from 'antd'
+import { useEffect, useState } from 'react'
+import { Input, Pagination, Select, Tag, Space, Tooltip, Spin } from 'antd'
 import myCallStore from './my-call-store'
 import useDialpadStore from '../../components/dialpad/dialpad'
 import { SearchOutlined, PhoneOutlined, CheckCircleOutlined, TeamOutlined, BarChartOutlined } from '@ant-design/icons'
 import { TaskStatus, TaskStatusLabel, TaskStatusColor } from '../../constants/taskStatus'
+import { useTranslation } from 'react-i18next'
 
 // 定义通话状态枚举
 enum CallStatus {
@@ -16,6 +17,7 @@ enum CallStatus {
 }
 
 const MyCallSide = () => {
+  const { t } = useTranslation()
   const {
     mainTab,
     setMainTab,
@@ -34,12 +36,15 @@ const MyCallSide = () => {
     setCurrentCustomer,
     selectedRecordId
   } = myCallStore()
-  const { groupCallInfo } = useDialpadStore()
+  const { groupCallInfo, reloadCallRecord } = useDialpadStore()
+
+  // 当前选中的任务索引
+  const [selectedTaskIndex, setSelectedTaskIndex] = useState(0)
 
   // 监听筛选条件变化
   useEffect(() => {
     fetchTaskData()
-  }, [currentPage, pageSize, subTab, searchPhone, mainTab])
+  }, [currentPage, pageSize, subTab, searchPhone, mainTab, reloadCallRecord])
 
   // 监听窗口大小变化
   useEffect(() => {
@@ -81,184 +86,210 @@ const MyCallSide = () => {
 
   return (
     <div className="flex flex-col h-full w-[320px]">
-      {/* 顶部导航栏 */}
-      <div className="flex flex-col border-b flex-none pb-2">
-        <div className="flex items-center justify-between p-4">
-          <h1 className="text-xl font-medium">My Call</h1>
-          <div className="flex space-x-4">
-            <span
-              className={`px-3 py-1 rounded-full cursor-pointer transition-colors ${
-                mainTab === 'normal' ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
-              }`}
-              onClick={() => setMainTab('normal')}
-            >
-              普通外呼
-            </span>
-            <span
-              className={`px-3 py-1 rounded-full cursor-pointer transition-colors ${
-                mainTab === 'task' ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
-              }`}
-              onClick={() => setMainTab('task')}
-            >
-              外呼任务
-            </span>
-          </div>
-        </div>
-        <div className="flex justify-end px-4 pb-2">
-          <div className="flex space-x-4">
-            {mainTab === 'normal' && (
+      <Spin spinning={loading}>
+        {/* 顶部导航栏 */}
+        <div className="flex flex-col border-b flex-none pb-2">
+          <div className="flex items-center justify-between p-4">
+            <h1 className="text-xl font-medium">{t('myCall.title')}</h1>
+            <div className="flex space-x-4">
               <span
-                className={`px-3 py-1 rounded-full cursor-pointer transition-colors text-sm ${
-                  subTab === 'today' ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                className={`px-3 py-1 rounded-full cursor-pointer transition-colors ${
+                  mainTab === 'normal' ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
                 }`}
-                onClick={() => setSubTab('today')}
+                onClick={() => setMainTab('normal')}
               >
-                今天
+                {t('myCall.normalOutbound')}
               </span>
-            )}
-            {mainTab === 'task' && (
-              <div className="flex space-x-4">
+              <span
+                className={`px-3 py-1 rounded-full cursor-pointer transition-colors ${
+                  mainTab === 'task' ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+                onClick={() => setMainTab('task')}
+              >
+                {t('myCall.outboundTask')}
+              </span>
+            </div>
+          </div>
+          <div className="flex justify-end px-4 pb-2">
+            <div className="flex space-x-4">
+              {mainTab === 'normal' && (
                 <span
                   className={`px-3 py-1 rounded-full cursor-pointer transition-colors text-sm ${
                     subTab === 'today' ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
                   }`}
                   onClick={() => setSubTab('today')}
                 >
-                  已拨打
+                  {t('myCall.today')}
                 </span>
-              </div>
-            )}
-            <span
-              className={`px-3 py-1 rounded-full cursor-pointer transition-colors text-sm ${
-                subTab === 'missed' ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
-              }`}
-              onClick={() => setSubTab('missed')}
-            >
-              未接
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 搜索栏 */}
-      <div className="border-b flex flex-col justify-center items-start gap-2">
-        <div className="flex items-center p-2">
-          <Select className="mr-2" defaultValue="phone" disabled>
-            <Select.Option value="phone">电话</Select.Option>
-          </Select>
-          <Input
-            placeholder="搜索"
-            prefix={<SearchOutlined />}
-            className="flex-1 ml-2"
-            value={searchPhone || ''}
-            onChange={(e) => setSearchPhone(e.target.value)}
-            onPressEnter={fetchTaskData}
-          />
-        </div>
-        {mainTab === 'task' && (
-          <div className="p-2 border-b">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-700">外呼任务状态</span>
-                {groupCallInfo?.status !== undefined && (
-                  <Tag color={TaskStatusColor[groupCallInfo.status as TaskStatus]}>
-                    {TaskStatusLabel[groupCallInfo.status as TaskStatus]}
-                  </Tag>
-                )}
-              </div>
-
-              <Space className="mt-1">
-                <Tooltip title="总呼叫数">
-                  <Tag icon={<PhoneOutlined />} color="blue">
-                    总数: {groupCallInfo?.process?.data?.totalCount || 0}
-                  </Tag>
-                </Tooltip>
-
-                <Tooltip title="客户接听数">
-                  <Tag icon={<TeamOutlined />} color="green">
-                    接听: {groupCallInfo?.process?.data?.customerAnsweredCount || 0}
-                  </Tag>
-                </Tooltip>
-
-                <Tooltip title="已完成数">
-                  <Tag icon={<CheckCircleOutlined />} color="purple">
-                    完成: {groupCallInfo?.process?.data?.completedCount || 0}
-                  </Tag>
-                </Tooltip>
-
-                {groupCallInfo?.process?.data?.totalCount > 0 && (
-                  <Tooltip title="完成率">
-                    <Tag icon={<BarChartOutlined />} color="orange">
-                      {Math.round(
-                        ((groupCallInfo?.process?.data?.completedCount || 0) /
-                          (groupCallInfo?.process?.data?.totalCount || 1)) *
-                          100
-                      )}
-                      %
-                    </Tag>
-                  </Tooltip>
-                )}
-              </Space>
+              )}
+              {mainTab === 'task' && (
+                <div className="flex space-x-4">
+                  <span
+                    className={`px-3 py-1 rounded-full cursor-pointer transition-colors text-sm ${
+                      subTab === 'today' ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setSubTab('today')}
+                  >
+                    {t('myCall.dialed')}
+                  </span>
+                </div>
+              )}
+              <span
+                className={`px-3 py-1 rounded-full cursor-pointer transition-colors text-sm ${
+                  subTab === 'missed' ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+                onClick={() => setSubTab('missed')}
+              >
+                {t('myCall.missed')}
+              </span>
             </div>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* 通话记录列表 */}
-      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
-        <div className="flex-1">
-          {taskData.map((record) => {
-            const statusInfo = getCallStatusInfo(record.status as CallStatus)
-
-            return (
-              <div
-                key={record.uuid}
-                className={`flex items-center p-3 border-b hover:bg-gray-100 cursor-pointer select-none overflow-hidden ${
-                  selectedRecordId === record.uuid ? 'bg-blue-50' : ''
-                }`}
-                onClick={() => setCurrentCustomer(record)}
-              >
-                <div className="w-8 h-8 mr-3 flex-none">
-                  <div className="w-full h-full rounded-full flex items-center justify-center">
-                    <span className="text-xl">{statusInfo.icon}</span>
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between">
-                    <span className={`font-medium truncate ${selectedRecordId === record.uuid ? 'text-blue-700' : ''}`}>
-                      {record.uuid}
-                    </span>
-                    <span className="text-gray-500 text-sm flex-none ml-2">{record.beginTime}</span>
-                  </div>
-                  <div
-                    className={`text-sm truncate ${selectedRecordId === record.uuid ? 'text-blue-600' : 'text-gray-500'}`}
+        {/* 搜索栏 */}
+        <div className="border-b flex flex-col justify-center items-start gap-2">
+          <div className="flex items-center p-2">
+            <Select className="mr-2" defaultValue="phone" disabled>
+              <Select.Option value="phone">{t('myCall.phone')}</Select.Option>
+            </Select>
+            <Input
+              placeholder={t('myCall.search')}
+              prefix={<SearchOutlined />}
+              className="flex-1 ml-2"
+              value={searchPhone || ''}
+              onChange={(e) => setSearchPhone(e.target.value)}
+              onPressEnter={fetchTaskData}
+            />
+          </div>
+          {mainTab === 'task' && groupCallInfo.length > 0 && (
+            <div className="p-2 border-b">
+              {groupCallInfo.length > 0 && (
+                <div className="mb-2">
+                  <Select
+                    className="w-full"
+                    value={selectedTaskIndex}
+                    onChange={(value) => setSelectedTaskIndex(value)}
+                    showSearch
+                    optionFilterProp="children"
+                    filterOption={(input, option) => {
+                      return option?.children?.toString().toLowerCase().includes(input.toLowerCase()) || false
+                    }}
                   >
-                    {record.phone}
+                    {groupCallInfo.map((info, index) => (
+                      <Select.Option key={index} value={index}>
+                        {t('myCall.task')} {index + 1}: {info.process.taskName || t('myCall.unknownTask')}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-700">{t('myCall.taskStatus')}</span>
+                  {groupCallInfo[selectedTaskIndex]?.status !== undefined && (
+                    <Tag color={TaskStatusColor[groupCallInfo[selectedTaskIndex].status as TaskStatus]}>
+                      {TaskStatusLabel[groupCallInfo[selectedTaskIndex].status as TaskStatus]}
+                    </Tag>
+                  )}
+                </div>
+
+                <Space className="mt-1">
+                  <Tooltip title={t('myCall.totalCalls')}>
+                    <Tag icon={<PhoneOutlined />} color="blue">
+                      {t('myCall.totalCalls')}: {groupCallInfo[selectedTaskIndex]?.process?.data?.totalCount || 0}
+                    </Tag>
+                  </Tooltip>
+
+                  <Tooltip title={t('myCall.answered')}>
+                    <Tag icon={<TeamOutlined />} color="green">
+                      {t('myCall.answered')}:{' '}
+                      {groupCallInfo[selectedTaskIndex]?.process?.data?.customerAnsweredCount || 0}
+                    </Tag>
+                  </Tooltip>
+
+                  <Tooltip title={t('myCall.completed')}>
+                    <Tag icon={<CheckCircleOutlined />} color="purple">
+                      {t('myCall.completed')}: {groupCallInfo[selectedTaskIndex]?.process?.data?.completedCount || 0}
+                    </Tag>
+                  </Tooltip>
+
+                  {groupCallInfo[selectedTaskIndex]?.process?.data?.totalCount > 0 && (
+                    <Tooltip title={t('myCall.completionRate')}>
+                      <Tag icon={<BarChartOutlined />} color="orange">
+                        {Math.round(
+                          ((groupCallInfo[selectedTaskIndex]?.process?.data?.completedCount || 0) /
+                            (groupCallInfo[selectedTaskIndex]?.process?.data?.totalCount || 1)) *
+                            100
+                        )}
+                        %
+                      </Tag>
+                    </Tooltip>
+                  )}
+                </Space>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 通话记录列表 */}
+        <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
+          <div className="flex-1">
+            {taskData.map((record, index) => {
+              const statusInfo = getCallStatusInfo(record.status as CallStatus)
+
+              return (
+                <div
+                  key={index}
+                  className={`flex items-center p-3 border-b hover:bg-gray-100 cursor-pointer select-none overflow-hidden ${
+                    selectedRecordId === record.uuid ? 'bg-blue-50' : ''
+                  }`}
+                  onClick={() => setCurrentCustomer(record)}
+                >
+                  <div className="w-8 h-8 mr-3 flex-none">
+                    <div className="w-full h-full rounded-full flex items-center justify-center">
+                      <span className="text-xl">{statusInfo?.icon}</span>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between">
+                      <span
+                        className={`font-medium truncate ${selectedRecordId === record.uuid ? 'text-blue-700' : ''}`}
+                      >
+                        -{/*{record.uuid}*/}
+                      </span>
+                      <span className="text-gray-500 text-sm flex-none ml-2">{record.beginTime}</span>
+                    </div>
+                    <div
+                      className={`text-sm truncate ${selectedRecordId === record.uuid ? 'text-blue-600' : 'text-gray-500'}`}
+                    >
+                      {record.phone}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+          <div className="p-4 border-t flex-none">
+            <Pagination
+              current={currentPage}
+              pageSize={pageSize}
+              total={total}
+              onChange={setCurrentPage}
+              size="small"
+              showSizeChanger={false}
+            />
+          </div>
         </div>
-        <div className="p-4 border-t flex-none">
-          <Pagination
-            current={currentPage}
-            pageSize={pageSize}
-            total={total}
-            onChange={setCurrentPage}
-            size="small"
-            showSizeChanger={false}
-          />
-        </div>
-      </div>
 
-      {/* 暂无通话提示 */}
-      {!loading && taskData.length === 0 && (
-        <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">📞</div>
-          <span>暂无通话</span>
-        </div>
-      )}
+        {/* 暂无通话提示 */}
+        {!loading && taskData.length === 0 && (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">📞</div>
+            <span>{t('myCall.noCalls')}</span>
+          </div>
+        )}
+      </Spin>
     </div>
   )
 }

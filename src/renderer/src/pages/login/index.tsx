@@ -15,7 +15,8 @@ interface LoginForm {
 
 const LANGUAGES = [
   { value: 'zh', label: '中文' },
-  { value: 'en', label: 'English' }
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' }
 ] as const
 
 const Login = () => {

@@ -1,0 +1,252 @@
+{
+  "common": {
+    "logout": "Cerrar sesión",
+    "login": "Iniciar sesión",
+    "welcome": "Bienvenido",
+    "settings": "Configuración",
+    "language": {
+      "zh": "中文",
+      "en": "English",
+      "es": "Español"
+    }
+  },
+  "login": {
+    "title": "Iniciar sesión en",
+    "tabs": {
+      "admin": "Inicio de sesión de administrador",
+      "agent": "Inicio de sesión de agente"
+    },
+    "username": {
+      "placeholder": "Ingrese nombre de usuario",
+      "required": "Por favor ingrese nombre de usuario"
+    },
+    "password": {
+      "placeholder": "Ingrese contraseña",
+      "required": "Por favor ingrese contraseña"
+    },
+    "captcha": {
+      "placeholder": "Ingrese captcha",
+      "required": "Por favor ingrese captcha",
+      "error": "Error al obtener captcha",
+      "alt": "Imagen de captcha"
+    },
+    "submit": "Iniciar sesión",
+    "success": "Inicio de sesión exitoso",
+    "invalid": "Nombre de usuario o contraseña inválidos",
+    "error": "Error al iniciar sesión",
+    "copyright": "© 2024 Jingle Byte. Todos los derechos reservados."
+  },
+  "routes": {
+    "myCall": "Mi llamada",
+    "todoList": "Tareas pendientes",
+    "outboundTaskTodo": "Mis tareas de llamadas salientes",
+    "contactTaskTodo": "Mis planes de contacto",
+    "dashboard": "Panel principal",
+    "callBot": {
+      "title": "Bot de llamadas",
+      "outboundCall": {
+        "title": "Llamada saliente",
+        "reports": "Informes de llamadas salientes",
+        "tasks": "Gestión de tareas",
+        "taskDetail": "Detalle de tarea",
+        "callRecord": "Registro de llamadas",
+        "callDetail": "Detalle de llamada"
+      },
+      "autoCall": {
+        "title": "Notificación de voz en tiempo real",
+        "template": "Plantilla de notificación de voz",
+        "record": "Registro de notificación de voz"
+      },
+      "scriptManagement": {
+        "title": "Gestión de guiones",
+        "myScript": "Mis guiones"
+      }
+    },
+    "callCenter": {
+      "title": "Centro de llamadas",
+      "reports": {
+        "title": "Informes VOIP",
+        "outboundTaskReports": "Llamadas grupales VOIP",
+        "agentOutboundReports": "Llamadas salientes VOIP",
+        "inboundReports": "Llamadas entrantes VOIP"
+      },
+      "outboundTasks": {
+        "title": "Tareas de llamadas salientes",
+        "tasks": "Gestión de tareas",
+        "taskCallRecord": "Registro de llamadas de tarea",
+        "taskCallDetail": "Detalle de llamada de tarea",
+        "taskDetail": "Detalle de tarea",
+        "taskRecordDetail": "Detalle de registro de tarea"
+      },
+      "record": {
+        "title": "Registro",
+        "callRecord": "VOIP CDR",
+        "callRecordDetail": "Detalle de registro de llamada VOIP"
+      }
+    },
+    "otp": {
+      "title": "Gestión OTP",
+      "messageCenter": {
+        "title": "Centro de mensajes",
+        "messageTemplate": "Plantilla de mensajes",
+        "messageReports": "Registro de mensajes"
+      }
+    },
+    "managementCenter": {
+      "title": "Centro de gestión",
+      "accountManagement": {
+        "title": "Gestión de cuentas",
+        "accountInfo": "Gestión de departamentos",
+        "userManagement": "Gestión de miembros",
+        "roleManagement": "Gestión de roles"
+      },
+      "agentManagement": {
+        "title": "Gestión de agentes",
+        "agentList": "Lista de agentes",
+        "agentGroup": "Grupo de agentes",
+        "agentRoleManagement": "Gestión de roles de agentes"
+      },
+      "settings": {
+        "title": "Configuración",
+        "agentManagement": "Gestión de agentes",
+        "callbackSettings": "Dirección de devolución de llamada"
+      }
+    }
+  },
+  "descriptions": {
+    "callRecord": "Registro de llamadas",
+    "basicInfo": "Información básica",
+    "callType": "Tipo de llamada",
+    "dialType": "Tipo de marcación",
+    "customerPhone": "Teléfono del cliente",
+    "agentPhone": "Teléfono del agente",
+    "firstCallAgent": "Primer agente en responder",
+    "callInfo": "Información de llamada",
+    "beginTime": "Hora de inicio",
+    "endTime": "Hora de finalización",
+    "ringTime": "Hora de timbre",
+    "answerTime": "Hora de respuesta",
+    "ringDuration": "Duración del timbre",
+    "talkDuration": "Duración de la conversación",
+    "totalDuration": "Duración total",
+    "resultInfo": "Información de resultado",
+    "callResult": "Resultado de la llamada",
+    "hangupType": "Tipo de colgado",
+    "recording": "Grabación",
+    "browserNotSupport": "Su navegador no admite la reproducción de audio",
+    "seconds": "segundos",
+    "agentCallDetail": "Detalle de llamada del agente",
+    "callType1": "Entrante",
+    "callType2": "Saliente",
+    "callType3": "Transferencia",
+    "dialType1Normal": "Saliente estándar",
+    "dialType2Normal": "Entrante",
+    "dialType3Normal": "Tarea saliente",
+    "dialType1Task": "Saliente estándar",
+    "dialType2Task": "Tarea saliente",
+    "callResult0Task": "Llamada fallida",
+    "callResult1Task": "Cliente no respondió",
+    "callResult2Task": "Agente no respondió",
+    "callResult3Task": "Ambos respondieron",
+    "callResult4Normal": "Saliente - Cliente conectado",
+    "callResult5Normal": "Saliente - Cliente no conectado",
+    "callResult6Normal": "Saliente - Llamada fallida",
+    "hangupType0": "Usuario colgó",
+    "hangupType1": "Cancelación del sistema",
+    "hangupType2": "Agente colgó",
+    "agentCallResult1Task": "Cliente conectado",
+    "agentCallResult2Task": "Cliente rechazó",
+    "agentCallResult3Task": "Cliente ocupado",
+    "agentCallResult4Task": "No respondió",
+    "agentCallResult5Task": "Agente respondió",
+    "agentCallResult6Task": "Agente no respondió y cliente colgó",
+    "agentCallResult1Normal": "Entrante - Cliente colgó",
+    "agentCallResult2Normal": "Entrante - Agente rechazó",
+    "agentCallResult3Normal": "Entrante - Agente respondió",
+    "agentCallResult4Normal": "Saliente - Cliente conectado",
+    "agentCallResult5Normal": "Saliente - Cliente no conectado",
+    "agentCallResult6Normal": "Saliente - Llamada fallida",
+    "agentCallResult7Normal": "Transferencia - Agente respondió",
+    "agentCallResult8Normal": "Transferencia - Agente rechazó",
+    "agentCallResult9Normal": "Transferencia - Cliente colgó",
+    "customer": "Cliente",
+    "customerInfo": "Información del cliente",
+    "callDetail": "Detalle de llamada",
+    "agent": "Agente",
+    "callDuration": "Duración de llamada",
+    "messageId": "ID de mensaje",
+    "to": "Para",
+    "templateName": "Nombre de plantilla",
+    "sendChannel": "Canal de envío",
+    "status": "Estado",
+    "code": "Código",
+    "verifyCount": "Recuento de verificación",
+    "verified": "Verificado",
+    "sendTime": "Hora de envío",
+    "taskName": "Nombre de tarea",
+    "taskId": "ID de tarea",
+    "salesScriptType": "Tipo de guión de ventas",
+    "salesScriptName": "Nombre de guión de ventas",
+    "uuid": "UUID",
+    "number": "Número",
+    "dialDuration": "Duración de marcación",
+    "conversationCount": "Recuento de conversaciones",
+    "callStatus": "Estado de llamada",
+    "dialCount": "Recuento de marcación",
+    "isFinished": "Está finalizado",
+    "intention": "Intención",
+    "hangupCause": "Causa de colgado",
+    "hangupPhrase": "Frase de colgado",
+    "taskCode": "Código de tarea",
+    "ttsText": "Texto TTS",
+    "agentBusyScript": "Guión de agente ocupado",
+    "caller": "Llamante",
+    "callee": "Llamado",
+    "extensionNumber": "Número de extensión",
+    "customerRingTime": "Hora de timbre del cliente",
+    "customerAnswerTime": "Hora de respuesta del cliente",
+    "assignedToAgent": "Asignado a agente",
+    "unassignedReason": "Razón de no asignación",
+    "agentAnswerTime": "Hora de respuesta del agente",
+    "customerRingDuration": "Duración del timbre del cliente",
+    "customerWaitDuration": "Duración de espera del cliente",
+    "phone": "Teléfono",
+    "customerName": "Nombre del Cliente",
+    "sex": "Género",
+    "mail": "Correo Electrónico",
+    "platform": "Plataforma",
+    "remark": "Observación"
+  },
+  "myCall": {
+    "title": "Mi Llamada",
+    "normalOutbound": "Llamada Saliente Normal",
+    "outboundTask": "Tarea de Llamada Saliente",
+    "today": "Hoy",
+    "dialed": "Marcado",
+    "missed": "Perdido",
+    "search": "Buscar",
+    "phone": "Teléfono",
+    "taskStatus": "Estado de Tarea Saliente",
+    "task": "Tarea",
+    "unknownTask": "Tarea Desconocida",
+    "totalCalls": "Total",
+    "answered": "Contestado",
+    "completed": "Completado",
+    "completionRate": "Tasa de Finalización",
+    "noCalls": "Sin Llamadas"
+  },
+  "callSummary": {
+    "title": "Resumen de Llamada",
+    "status": "Estado de Procesamiento",
+    "statusRequired": "Por favor seleccione el estado de procesamiento",
+    "pending": "Pendiente",
+    "processed": "Procesado",
+    "unprocessable": "No Procesable",
+    "invalid": "Inválido",
+    "remark": "Observación",
+    "remarkPlaceholder": "Por favor ingrese",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "saveSuccess": "Guardado con éxito"
+  }
+}

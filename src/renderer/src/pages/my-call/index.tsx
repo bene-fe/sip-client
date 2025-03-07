@@ -38,11 +38,15 @@ const MyCall = () => {
       }}
     >
       <div className="flex flex-row">
-        <MyCallSide />
+        <div className="border-r border-gray-300 pr-4">
+          <MyCallSide />
+        </div>
         {currentCustomer ? (
-          <MyCallContent className="flex-1" />
+          <div className="flex-1 pl-4 border-r border-gray-300 pr-4">
+            <MyCallContent className="flex-1" />
+          </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center pl-4">
             <Empty description="暂无通话" />
           </div>
         )}

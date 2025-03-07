@@ -8,6 +8,7 @@ import {
   getAgentNumberDetail
 } from '../../api/agent-seat'
 import useStore from '../../store'
+import dayjs from 'dayjs'
 
 export type MainTab = 'task' | 'normal'
 export type SubTab = 'today' | 'missed' | 'called'
@@ -31,9 +32,13 @@ interface Store {
   taskData: TaskRecord[]
   total: number
   loading: boolean
+  contentLoading: boolean
   callDetail: CallDetail | null
   agentCallDetail: AgentCallDetail[] | null
+  currentTempCall: any | null
+
   // 方法
+  setCurrentTempCall: (uuid: string | null) => void
   setCallDetail: (callDetail: CallDetail | null) => void
   setAgentCallDetail: (agentCallDetail: AgentCallDetail[] | null) => void
   setCurrentCustomer: (currentCustomer: TaskRecord | null) => void
@@ -44,6 +49,7 @@ interface Store {
   setPageSize: (size: number) => void
   setSearchPhone: (phone: string) => void
   fetchTaskData: () => Promise<void>
+  setContentLoading: (loading: boolean) => void
 }
 
 // 计算每页显示数量的函数
@@ -58,10 +64,12 @@ const myCallStore = create<Store>()((set, get) => ({
   currentCustomer: null,
   selectedRecordId: null,
   callDetail: null,
+  currentTempCall: null,
   agentCallDetail: [],
   mainTab: 'normal' as MainTab,
   subTab: 'today' as SubTab,
   currentPage: 1,
+  contentLoading: false,
   pageSize: calculatePageSize(),
   searchPhone: null,
   taskData: [],
@@ -75,6 +83,8 @@ const myCallStore = create<Store>()((set, get) => ({
       selectedRecordId: currentCustomer?.uuid || null
     })
   },
+  setContentLoading: (loading: boolean) => set({ contentLoading: loading }),
+  setCurrentTempCall: (tempCall: any) => set({ currentTempCall: tempCall }),
   setSelectedRecordId: (id) => set({ selectedRecordId: id }),
   setMainTab: (mainTab) => set({ mainTab }),
   setSubTab: (subTab) => set({ subTab, currentPage: 1 }),
@@ -82,47 +92,61 @@ const myCallStore = create<Store>()((set, get) => ({
   setPageSize: (pageSize) => set({ pageSize }),
   setSearchPhone: (searchPhone) => set({ searchPhone, currentPage: 1 }),
   setCallDetail: (callDetail) => set({ callDetail }),
-  setAgentCallDetail: (agentCallDetail) => set({ agentCallDetail }),
+  setAgentCallDetail: (agentCallDetail) => {
+    set({ agentCallDetail })
+  },
   // 获取任务列表数据
   fetchTaskData: async () => {
-    const { searchPhone, subTab, currentPage, pageSize, mainTab } = get()
+    const { searchPhone, subTab, currentPage, pageSize, mainTab, currentTempCall } = get()
     set({ loading: true })
     const { agentDetail } = useStore.getState()
 
-    const handleTask = (uuid: string) => {
-      getTaskNumberDetail(uuid).then((r: any) => {
-        if (r.code === 0) {
-          set({
-            callDetail: r.data
-          })
-        }
-      })
+    const handleTask = async (uuid: string) => {
+      set({ contentLoading: true })
 
-      getTaskAgentNumberDetail(uuid).then((r: any) => {
-        if (r.code === 0) {
+      try {
+        const taskNumberResponse: any = await getTaskNumberDetail(uuid)
+        if (taskNumberResponse?.code === 0) {
           set({
-            agentCallDetail: r.data
+            callDetail: taskNumberResponse.data
           })
         }
-      })
+
+        const taskAgentNumberResponse: any = await getTaskAgentNumberDetail(uuid)
+        if (taskAgentNumberResponse?.code === 0) {
+          set({
+            agentCallDetail: taskAgentNumberResponse.data
+          })
+        }
+      } catch (error) {
+        console.error('获取任务详情失败', error)
+      } finally {
+        set({ contentLoading: false })
+      }
     }
 
-    const handleNormal = (uuid: string) => {
-      getNumberDetail(uuid).then((r: any) => {
-        if (r.code === 0) {
-          set({
-            callDetail: r.data
-          })
-        }
-      })
+    const handleNormal = async (uuid: string) => {
+      set({ contentLoading: true })
 
-      getAgentNumberDetail(uuid).then((r: any) => {
-        if (r.code === 0) {
+      try {
+        const numberResponse: any = await getNumberDetail(uuid)
+        if (numberResponse.code === 0) {
           set({
-            agentCallDetail: r.data
+            callDetail: numberResponse.data
           })
         }
-      })
+
+        const agentNumberResponse: any = await getAgentNumberDetail(uuid)
+        if (agentNumberResponse.code === 0) {
+          set({
+            agentCallDetail: agentNumberResponse.data
+          })
+        }
+      } catch (error) {
+        console.error('获取通话详情失败', error)
+      } finally {
+        set({ contentLoading: false })
+      }
     }
 
     if (mainTab === 'task') {
@@ -137,16 +161,32 @@ const myCallStore = create<Store>()((set, get) => ({
         const { data } = response
         // 转换时区
         data.records.forEach((item: any) => {
-          item.beginTime = convertTimeZone(agentDetail?.org?.timezone, item.beginTime, true)
+          item.beginTime = convertTimeZone(agentDetail.org?.timezone, item.beginTime, true)
         })
-        set({
-          taskData: data.records,
-          total: data.total,
-          currentCustomer: data.records[0] || null,
-          selectedRecordId: data.records[0]?.uuid || null
-        })
-        if (data.records[0]?.uuid) {
-          handleTask(data.records[0]?.uuid)
+        if (currentTempCall && currentTempCall?.callUuid && data.records[0]?.uuid !== currentTempCall?.callUuid) {
+          const tempCall = {
+            uuid: currentTempCall?.callUuid,
+            phone: currentTempCall?.customerPhoneNumber,
+            beginTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+            status: 0
+          }
+          set({
+            taskData: [tempCall, ...data.records],
+            total: data.total + 1,
+            currentCustomer: tempCall || null,
+            selectedRecordId: tempCall.uuid || null
+          })
+          handleTask(tempCall.uuid)
+        } else {
+          set({
+            taskData: data.records,
+            total: data.total,
+            currentCustomer: data.records[0] || null,
+            selectedRecordId: data.records[0]?.uuid || null
+          })
+          if (data.records[0]?.uuid) {
+            handleTask(data.records[0]?.uuid)
+          }
         }
       } catch (error) {
         console.error('Failed to fetch task data:', error)
@@ -165,16 +205,32 @@ const myCallStore = create<Store>()((set, get) => ({
         const { data } = response
         // 转换时区
         data.records.forEach((item: any) => {
-          item.beginTime = convertTimeZone(agentDetail.org?.timezone, item.beginTime, true)
+          item.beginTime = convertTimeZone(agentDetail?.org?.timezone, item.beginTime, true)
         })
-        set({
-          taskData: data.records,
-          total: data.total,
-          currentCustomer: data.records[0] || null,
-          selectedRecordId: data.records[0]?.uuid || null
-        })
-        if (data.records[0]?.uuid) {
-          handleNormal(data.records[0]?.uuid)
+        if (currentTempCall && currentTempCall?.callUuid && data.records[0]?.uuid !== currentTempCall?.callUuid) {
+          const tempCall = {
+            uuid: currentTempCall?.callUuid,
+            phone: currentTempCall?.customerPhoneNumber,
+            beginTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+            status: 0
+          }
+          set({
+            taskData: [tempCall, ...data.records],
+            total: data.total + 1,
+            currentCustomer: tempCall || null,
+            selectedRecordId: tempCall.uuid || null
+          })
+          handleNormal(tempCall.uuid)
+        } else {
+          set({
+            taskData: data.records,
+            total: data.total,
+            currentCustomer: data.records[0] || null,
+            selectedRecordId: data.records[0]?.uuid || null
+          })
+          if (data.records[0]?.uuid) {
+            handleNormal(data.records[0]?.uuid)
+          }
         }
       } catch (error) {
         console.error('Failed to fetch task data:', error)
