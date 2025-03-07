@@ -306,12 +306,13 @@ const Layout = () => {
               )}
               // logo={logo}
               layout="mix"
+              collapsed={true}
               menuDataRender={() => menuRoute}
               location={{ pathname }}
               siderWidth={256}
               token={{
                 sider: {
-                  colorBgMenuItemSelected: 'rgb(47, 76, 221)',
+                  colorBgMenuItemSelected: 'rgb(34, 197, 94)',
                   colorTextSubMenuSelected: 'white',
                   colorMenuBackground: 'white'
                 },
