@@ -129,9 +129,13 @@ const Dialpad = ({ className }: { className?: string }) => {
         shape="circle"
         disabled={![1, 8, 5, 4, 3].includes(status)}
         icon={<PhoneFilled className="text-white flex items-center justify-center" />}
-        className={`text-xl flex items-center justify-center ${
-          ![1, 8, 5, 4, 3].includes(status) ? 'bg-gray-300' : 'bg-green-500'
-        }`}
+        style={{
+          fontSize: '1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: ![1, 8, 5, 4, 3].includes(status) ? '#d1d5db' : '#10b981'
+        }}
         onClick={() => {
           answerCall()
         }}
@@ -148,7 +152,9 @@ const Dialpad = ({ className }: { className?: string }) => {
         onClick={() => {
           hangupCall()
         }}
-        className="bg-red-500"
+        style={{
+          backgroundColor: ![1, 8, 5, 4, 3].includes(status) ? '#d1d5db' : '#e34d59'
+        }}
       />
     )
   }
@@ -372,9 +378,9 @@ const Dialpad = ({ className }: { className?: string }) => {
               <>
                 <Avatar
                   size={56}
-                  icon={<UserOutlined className="text-2xl" />}
+                  icon={<UserOutlined style={{ fontSize: '1.5rem' }} />}
                   shape="circle"
-                  className="bg-gray-300 flex-shrink-0"
+                  style={{ backgroundColor: '#d1d5db', flexShrink: 0 }}
                 />
                 <div className="flex w-full flex-col items-start gap-2 flex-1">
                   <div className="text-white text-2xl font-bold tracking-wide">{currentCallNumber}</div>

@@ -179,11 +179,9 @@ const StatusBar = (props: { className?: string }) => {
         shape="circle"
         disabled={![2, 6, 7].includes(status) || !phoneNumber}
         icon={<PhoneFilled className="text-white flex items-center justify-center" />}
-        className={`text-xl flex items-center justify-center shadow-lg transition-all duration-200 ${
-          ![1, 8, 5, 4, 3].includes(status) && phoneNumber
-            ? 'bg-green-500 hover:bg-green-600 active:bg-green-700'
-            : 'bg-gray-300 hover:bg-gray-400'
-        }`}
+        style={{
+          backgroundColor: ![1, 8, 5, 4, 3].includes(status) && phoneNumber ? '#34d399' : '#e5e7eb'
+        }}
         onClick={handleMakeCall}
       />
     )
@@ -200,7 +198,7 @@ const StatusBar = (props: { className?: string }) => {
 
   return (
     <div className={`flex flex-row items-center gap-3 ${props.className}`}>
-      <div className="flex flex-row items-center gap-3">
+      <div className="flex flex-row items-center gap-3 ">
         <Select
           className="w-28"
           disabled={sipState.statusIsCall || sipState.statusIsring || [8, 4, 5, 3].includes(status) || loginLoading}

@@ -1,5 +1,3 @@
-import './assets/index.css'
-
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
@@ -13,6 +11,7 @@ import { AuthProvider } from './auth/AuthContext'
 import zhCN from 'antd/locale/zh_CN'
 import enUS from 'antd/locale/en_US'
 import useLanguageStore from './store/language'
+import './assets/index.css'
 
 // 将 Root 组件导出
 export const Root = () => {
