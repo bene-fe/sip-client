@@ -34,7 +34,8 @@
     "success": "Login successful",
     "invalid": "Invalid username or password",
     "error": "Login failed",
-    "copyright": "© 2024 Jingle Byte. All rights reserved."
+    "copyright": "© 2024 Jingle Byte. All rights reserved.",
+    "subtitle": "Sign in to access your account"
   },
   "routes": {
     "myCall": "My Call",

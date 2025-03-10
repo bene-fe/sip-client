@@ -10,6 +10,7 @@ import { AuthProvider } from './auth/AuthContext'
 // 导入 antd 的语言包
 import zhCN from 'antd/locale/zh_CN'
 import enUS from 'antd/locale/en_US'
+import esES from 'antd/locale/es_ES'
 import useLanguageStore from './store/language'
 import './assets/index.css'
 
@@ -18,7 +19,12 @@ export const Root = () => {
   const { language } = useLanguageStore()
 
   // 根据当前语言选择对应的 antd 语言包
-  const antdLocale = language === 'zh' ? zhCN : enUS
+  let antdLocale = enUS
+  if (language === 'zh') {
+    antdLocale = zhCN
+  } else if (language === 'es') {
+    antdLocale = esES
+  }
 
   return (
     <ConfigProvider

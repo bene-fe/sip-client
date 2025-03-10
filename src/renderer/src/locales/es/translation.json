@@ -34,7 +34,8 @@
     "success": "Inicio de sesión exitoso",
     "invalid": "Nombre de usuario o contraseña inválidos",
     "error": "Error al iniciar sesión",
-    "copyright": "© 2024 Jingle Byte. Todos los derechos reservados."
+    "copyright": "© 2024 Jingle Byte. Todos los derechos reservados.",
+    "subtitle": "Inicie sesión para acceder a su cuenta"
   },
   "routes": {
     "myCall": "Mi llamada",
