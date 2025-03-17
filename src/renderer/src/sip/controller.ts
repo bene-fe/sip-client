@@ -8,6 +8,7 @@ class SipController {
   agentStatus: number = 1
   loginStatus: boolean = false
   exitStatus: boolean = false
+  rtpId: string = ''
   loginInfo: {
     username: string
     password: string
@@ -76,6 +77,7 @@ class SipController {
         this.auth.token = res?.content?.token
         this.auth.refreshToken = res?.content?.refreshToken
         this.auth.expireAt = res?.content?.expireAt
+        this.rtpId = res?.content?.rtpengineId
         this.loginStatus = true
         return
       }

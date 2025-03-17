@@ -318,7 +318,8 @@ const useDialpad = create<Store & Action>()(
             }),
             sipInstance: new SipCall({
               ...loginInfo,
-              stateEventListener: get().setEventListener
+              stateEventListener: get().setEventListener,
+              sipController: get().sipController
             })
           })
         }

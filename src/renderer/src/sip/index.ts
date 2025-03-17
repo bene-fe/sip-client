@@ -19,6 +19,7 @@ import {
   wrapUp,
   wrapUpCancel
 } from './request'
+import SipController from './controller'
 
 //初始化配置
 interface InitConfig {
@@ -38,6 +39,7 @@ interface InitConfig {
   groupCallNotify: (info: any) => void
   otherEvent: (info: any) => void
   kick: () => void
+  sipController: SipController
 }
 
 interface StunConfig {
@@ -121,6 +123,7 @@ export default class SipCall {
     audio: true,
     video: false
   }
+  public controller: SipController
 
   //创建audio控件，播放声音的地方
   private audioView = document.createElement('audio')
@@ -152,7 +155,7 @@ export default class SipCall {
   constructor(config: InitConfig) {
     //坐席号码
     this.localAgent = config.extNo
-
+    this.controller = config.sipController
     if (undefined === config.domain || config.domain.length <= 0) {
       config.domain = config.host
     }
@@ -605,6 +608,7 @@ export default class SipCall {
         }
         extraHeaders.push('x-call_center_type: ' + 'OUTBOUND_CALL')
         extraHeaders.push('x-agent_channel: ' + this.localAgent)
+        extraHeaders.push('x-rtpengine_id: ' + this.controller.rtpId)
       }
       this.outgoingSession = this.ua.call(phone, {
         eventHandlers: {
