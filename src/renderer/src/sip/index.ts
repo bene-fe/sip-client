@@ -1,17 +1,11 @@
 import * as jssip from 'jssip'
 import { v4 as uuidv4 } from 'uuid'
-import {
-  IceCandidateEvent,
-  IncomingEvent,
-  OutgoingEvent,
-  PeerConnectionEvent,
-  RTCSession,
-} from 'jssip/lib/RTCSession'
+import { IceCandidateEvent, IncomingEvent, OutgoingEvent, PeerConnectionEvent, RTCSession } from 'jssip/lib/RTCSession'
 import {
   IncomingMessageEvent,
   IncomingRTCSessionEvent,
   OutgoingMessageEvent,
-  OutgoingRTCSessionEvent,
+  OutgoingRTCSessionEvent
 } from 'jssip/lib/UA'
 import ring from './ring'
 import {
@@ -23,7 +17,7 @@ import {
   transfer,
   getOrgOnlineAgent,
   wrapUp,
-  wrapUpCancel,
+  wrapUpCancel
 } from './request'
 
 //初始化配置
@@ -118,14 +112,14 @@ const enum State {
   CALL_END = 'CALL_END', //通话结束
   MUTE = 'MUTE', //静音
   UNMUTE = 'UNMUTE', //取消静音
-  LATENCY_STAT = 'LATENCY_STAT', //网络延迟统计
+  LATENCY_STAT = 'LATENCY_STAT' //网络延迟统计
 }
 
 export default class SipCall {
   //媒体控制
   private constraints = {
     audio: true,
-    video: false,
+    video: false
   }
 
   //创建audio控件，播放声音的地方
@@ -150,9 +144,7 @@ export default class SipCall {
   private currentStatReport: NetworkLatencyStat
 
   //回调函数
-  private stateEventListener:
-    | ((event: string, data: any) => void | undefined)
-    | undefined
+  private stateEventListener: ((event: string, data: any) => void | undefined) | undefined
 
   private stunConfig: StunConfig | undefined
 
@@ -190,7 +182,7 @@ export default class SipCall {
       inboundPacketsSent: 0,
       roundTripTime: 0,
       inboundAudioLevel: 0,
-      outboundAudioLevel: 0,
+      outboundAudioLevel: 0
     }
 
     if (config.extNo && config.extPwd) {
@@ -198,8 +190,7 @@ export default class SipCall {
         if (res?.data) {
           // JsSIP.C.SESSION_EXPIRES=120,JsSIP.C.MIN_SESSION_EXPIRES=120;
           const proto = res?.data?.ssl ? 'wss' : 'ws'
-          const wsServer =
-            proto + '://' + res?.data?.host + ':' + res?.data?.port
+          const wsServer = proto + '://' + res?.data?.host + ':' + res?.data?.port
           this.socket = new jssip.WebSocketInterface(wsServer)
 
           this.ua = new jssip.UA({
@@ -211,7 +202,7 @@ export default class SipCall {
             session_timers: false,
             // connection_recovery_max_interval:30,
             // connection_recovery_min_interval:4,
-            user_agent: 'JsSIP 3.9.0',
+            user_agent: 'JsSIP 3.9.0'
           })
 
           //websocket连接成功
@@ -233,7 +224,7 @@ export default class SipCall {
           //注册成功
           this.ua.on('registered', () => {
             this.onChangeState(State.REGISTERED, {
-              localAgent: this.localAgent,
+              localAgent: this.localAgent
             })
           })
           //取消注册
@@ -241,14 +232,14 @@ export default class SipCall {
             // console.log("unregistered:", e);
             this.ua.stop()
             this.onChangeState(State.UNREGISTERED, {
-              localAgent: this.localAgent,
+              localAgent: this.localAgent
             })
           })
           //注册失败
           this.ua.on('registrationFailed', (e) => {
             // console.error("registrationFailed", e)
             this.onChangeState(State.REGISTER_FAILED, {
-              msg: '注册失败:' + e.cause,
+              msg: '注册失败:' + e.cause
             })
             this.ua.stop()
             this.socket = null
@@ -260,137 +251,121 @@ export default class SipCall {
           })
 
           //电话事件监听
-          this.ua.on(
-            'newRTCSession',
-            (data: IncomingRTCSessionEvent | OutgoingRTCSessionEvent) => {
-              // console.info('on new rtcsession: ', data)
-              const s = data.session
-              let currentEvent: string
-              if (data.originator === 'remote') {
-                //来电处理
-                //console.info('>>>>>>>>>>>>>>>>>>>>来电>>>>>>>>>>>>>>>>>>>>')
-                this.incomingSession = data.session
-                this.currentSession = this.incomingSession
-                this.direction = 'inbound'
-                currentEvent = State.INCOMING_CALL
-                this.playAudio()
-              } else {
-                //console.info('<<<<<<<<<<<<<<<<<<<<外呼<<<<<<<<<<<<<<<<<<<<')
-                this.direction = 'outbound'
-                currentEvent = State.OUTGOING_CALL
-                this.playAudio()
+          this.ua.on('newRTCSession', (data: IncomingRTCSessionEvent | OutgoingRTCSessionEvent) => {
+            // console.info('on new rtcsession: ', data)
+            const s = data.session
+            let currentEvent: string
+            if (data.originator === 'remote') {
+              //来电处理
+              //console.info('>>>>>>>>>>>>>>>>>>>>来电>>>>>>>>>>>>>>>>>>>>')
+              this.incomingSession = data.session
+              this.currentSession = this.incomingSession
+              this.direction = 'inbound'
+              currentEvent = State.INCOMING_CALL
+              this.playAudio()
+            } else {
+              //console.info('<<<<<<<<<<<<<<<<<<<<外呼<<<<<<<<<<<<<<<<<<<<')
+              this.direction = 'outbound'
+              currentEvent = State.OUTGOING_CALL
+              this.playAudio()
+            }
+
+            s.on('peerconnection', (evt: PeerConnectionEvent) => {
+              // console.info('onPeerconnection');
+              //处理通话中媒体流
+              this.handleAudio(evt.peerconnection)
+            })
+
+            s.on('connecting', () => {
+              // console.info('connecting')
+            })
+
+            //防止检测时间过长
+            let iceCandidateTimeout: NodeJS.Timeout
+            s.on('icecandidate', (evt: IceCandidateEvent) => {
+              if (iceCandidateTimeout != null) {
+                clearTimeout(iceCandidateTimeout)
               }
+              if (evt.candidate.type === 'srflx' || evt.candidate.type === 'relay') {
+                evt.ready()
+              }
+              iceCandidateTimeout = setTimeout(evt.ready, 1000)
+            })
 
-              s.on('peerconnection', (evt: PeerConnectionEvent) => {
-                // console.info('onPeerconnection');
-                //处理通话中媒体流
-                this.handleAudio(evt.peerconnection)
-              })
+            s.on('sending', () => {
+              // console.info('sending')
+            })
 
-              s.on('connecting', () => {
-                // console.info('connecting')
+            s.on('progress', (evt: IncomingEvent | OutgoingEvent) => {
+              // console.info('通话振铃-->通话振铃')
+              //s.remote_identity.display_name
+              if ([180, 183].includes((evt as OutgoingEvent)?.response?.status_code)) {
+                onDialing()
+              }
+              // 拨打电话后告知server状态变动
+              this.onChangeState(currentEvent, {
+                direction: this.direction,
+                otherLegNumber: data.originator === 'remote' ? data.request.from.uri.user : data.request.to.uri.user,
+                callId: this.currentCallId
               })
+            })
 
-              //防止检测时间过长
-              let iceCandidateTimeout: NodeJS.Timeout
-              s.on('icecandidate', (evt: IceCandidateEvent) => {
-                if (iceCandidateTimeout != null) {
-                  clearTimeout(iceCandidateTimeout)
-                }
-                if (
-                  evt.candidate.type === 'srflx' ||
-                  evt.candidate.type === 'relay'
-                ) {
-                  evt.ready()
-                }
-                iceCandidateTimeout = setTimeout(evt.ready, 1000)
-              })
+            s.on('accepted', () => {
+              // console.info('通话中-->通话中')
+              this.stopAudio()
+              this.onChangeState(State.IN_CALL, null)
+            })
+            s.on('accepted', () => {
+              // console.info('accepted')
+            })
 
-              s.on('sending', () => {
-                // console.info('sending')
-              })
+            s.on('ended', (evt: any) => {
+              // console.info('通话结束-->通话结束')
+              const evtData: CallEndEvent = {
+                answered: true,
+                cause: evt.cause,
+                code: evt.message?.status_code ?? 0,
+                originator: evt.originator
+              }
+              this.stopAudio()
+              this.cleanCallingData()
+              this.onChangeState(State.CALL_END, evtData)
+            })
 
-              s.on('progress', (evt: IncomingEvent | OutgoingEvent) => {
-                // console.info('通话振铃-->通话振铃')
-                //s.remote_identity.display_name
-                if (
-                  [180, 183].includes(
-                    (evt as OutgoingEvent)?.response?.status_code
-                  )
-                ) {
-                  onDialing()
-                }
-                // 拨打电话后告知server状态变动
-                this.onChangeState(currentEvent, {
-                  direction: this.direction,
-                  otherLegNumber:
-                    data.originator === 'remote'
-                      ? data.request.from.uri.user
-                      : data.request.to.uri.user,
-                  callId: this.currentCallId,
-                })
-              })
+            s.on('failed', (evt: any) => {
+              // console.info('通话失败-->通话失败')
+              const evtData: CallEndEvent = {
+                answered: false,
+                cause: evt.cause,
+                code: evt.message?.status_code ?? 0,
+                originator: evt.originator
+              }
+              this.stopAudio()
+              this.cleanCallingData()
+              this.onChangeState(State.CALL_END, evtData)
+            })
 
-              s.on('accepted', () => {
-                // console.info('通话中-->通话中')
-                this.stopAudio()
-                this.onChangeState(State.IN_CALL, null)
-              })
-              s.on('accepted', () => {
-                // console.info('accepted')
-              })
+            s.on('hold', () => {
+              //console.info('通话保持-->通话保持')
+              this.onChangeState(State.HOLD, null)
+            })
 
-              s.on('ended', (evt: any) => {
-                // console.info('通话结束-->通话结束')
-                const evtData: CallEndEvent = {
-                  answered: true,
-                  cause: evt.cause,
-                  code: evt.message?.status_code ?? 0,
-                  originator: evt.originator,
-                }
-                this.stopAudio()
-                this.cleanCallingData()
-                this.onChangeState(State.CALL_END, evtData)
-              })
+            s.on('unhold', () => {
+              //console.info('通话恢复-->通话恢复')
+              this.stopAudio()
+              this.onChangeState(State.UNHOLD, null)
+            })
+          })
 
-              s.on('failed', (evt: any) => {
-                // console.info('通话失败-->通话失败')
-                const evtData: CallEndEvent = {
-                  answered: false,
-                  cause: evt.cause,
-                  code: evt.message?.status_code ?? 0,
-                  originator: evt.originator,
-                }
-                this.stopAudio()
-                this.cleanCallingData()
-                this.onChangeState(State.CALL_END, evtData)
-              })
-
-              s.on('hold', () => {
-                //console.info('通话保持-->通话保持')
-                this.onChangeState(State.HOLD, null)
-              })
-
-              s.on('unhold', () => {
-                //console.info('通话恢复-->通话恢复')
-                this.stopAudio()
-                this.onChangeState(State.UNHOLD, null)
-              })
-            }
-          )
-
-          this.ua.on(
-            'newMessage',
-            (data: IncomingMessageEvent | OutgoingMessageEvent) => {
-              const s = data.message
-              s.on('succeeded', () => {
-                // console.log("newMessage-succeeded:", data, evt)
-              })
-              s.on('failed', () => {
-                // console.log("newMessage-succeeded:", data)
-              })
-            }
-          )
+          this.ua.on('newMessage', (data: IncomingMessageEvent | OutgoingMessageEvent) => {
+            const s = data.message
+            s.on('succeeded', () => {
+              // console.log("newMessage-succeeded:", data, evt)
+            })
+            s.on('failed', () => {
+              // console.log("newMessage-succeeded:", data)
+            })
+          })
 
           //启动UA
           this.ua.start()
@@ -442,7 +417,7 @@ export default class SipCall {
           upLossRate: 0,
           downLossRate: 0,
           downAudioLevel: 0,
-          upAudioLevel: 0,
+          upAudioLevel: 0
         }
 
         if (this.currentStatReport.inboundAudioLevel != undefined) {
@@ -452,33 +427,17 @@ export default class SipCall {
           ls.upAudioLevel = this.currentStatReport.outboundAudioLevel
         }
 
-        if (
-          this.currentStatReport.inboundLost &&
-          this.currentStatReport.inboundPacketsSent
-        ) {
-          ls.downLossRate =
-            this.currentStatReport.inboundLost /
-            this.currentStatReport.inboundPacketsSent
+        if (this.currentStatReport.inboundLost && this.currentStatReport.inboundPacketsSent) {
+          ls.downLossRate = this.currentStatReport.inboundLost / this.currentStatReport.inboundPacketsSent
         }
-        if (
-          this.currentStatReport.outboundLost &&
-          this.currentStatReport.outboundPacketsSent
-        ) {
-          ls.upLossRate =
-            this.currentStatReport.outboundLost /
-            this.currentStatReport.outboundPacketsSent
+        if (this.currentStatReport.outboundLost && this.currentStatReport.outboundPacketsSent) {
+          ls.upLossRate = this.currentStatReport.outboundLost / this.currentStatReport.outboundPacketsSent
         }
         if (this.currentStatReport.roundTripTime != undefined) {
-          ls.latencyTime = Math.floor(
-            this.currentStatReport.roundTripTime * 1000
-          )
+          ls.latencyTime = Math.floor(this.currentStatReport.roundTripTime * 1000)
         }
         console.debug(
-          '上行/下行(丢包率):' +
-            (ls.upLossRate * 100).toFixed(2) +
-            '% / ' +
-            (ls.downLossRate * 100).toFixed(2) +
-            '%',
+          '上行/下行(丢包率):' + (ls.upLossRate * 100).toFixed(2) + '% / ' + (ls.downLossRate * 100).toFixed(2) + '%',
           '延迟:' + ls.latencyTime.toFixed(2) + 'ms'
         )
         if (ls.downAudioLevel > 0) {
@@ -524,14 +483,11 @@ export default class SipCall {
       inboundPacketsSent: 0,
       roundTripTime: 0,
       inboundAudioLevel: 0,
-      outboundAudioLevel: 0,
+      outboundAudioLevel: 0
     }
   }
 
-  private onChangeState(
-    event: string,
-    data: StateListenerMessage | CallEndEvent | LatencyStat | null
-  ) {
+  private onChangeState(event: string, data: StateListenerMessage | CallEndEvent | LatencyStat | null) {
     if (undefined === this.stateEventListener) {
       return
     }
@@ -542,7 +498,7 @@ export default class SipCall {
   private checkCurrentCallIsActive(): boolean {
     if (!this.currentSession || !this.currentSession.isEstablished()) {
       this.onChangeState(State.ERROR, {
-        msg: '当前通话不存在或已销毁，无法执行该操作。',
+        msg: '当前通话不存在或已销毁，无法执行该操作。'
       })
       return false
     }
@@ -555,7 +511,7 @@ export default class SipCall {
       this.ua.register()
     } else {
       this.onChangeState(State.ERROR, {
-        msg: 'websocket尚未连接，请先连接ws服务器.',
+        msg: 'websocket尚未连接，请先连接ws服务器.'
       })
     }
   }
@@ -587,7 +543,7 @@ export default class SipCall {
 
   public sendMessage = (target: string, content: string) => {
     const options = {
-      contentType: 'text/plain',
+      contentType: 'text/plain'
     }
     this.ua.sendMessage(target, content, options)
   }
@@ -602,18 +558,18 @@ export default class SipCall {
               username: this.stunConfig.username,
               credentialType: 'password',
               credential: this.stunConfig.password,
-              urls: [this.stunConfig.type + ':' + this.stunConfig.host],
-            },
-          ],
+              urls: [this.stunConfig.type + ':' + this.stunConfig.host]
+            }
+          ]
         }
       } else {
         return {
           iceTransportPolicy: 'all',
           iceServers: [
             {
-              urls: [this.stunConfig.type + ':' + this.stunConfig.host],
-            },
-          ],
+              urls: [this.stunConfig.type + ':' + this.stunConfig.host]
+            }
+          ]
         }
       }
     } else {
@@ -626,7 +582,7 @@ export default class SipCall {
   }
 
   //发起呼叫
-  public call = (phone: string, param: CallExtraParam = {}): string => {
+  public call = (phone: string, param: CallExtraParam = {}): string | undefined => {
     if (!this.checkPhoneNumber(phone)) {
       throw new Error('手机号格式不正确，请检查手机号格式。')
     }
@@ -655,12 +611,12 @@ export default class SipCall {
           //回铃音处理
           peerconnection: (e: { peerconnection: RTCPeerConnection }) => {
             this.handleAudio(e.peerconnection)
-          },
+          }
         },
         mediaConstraints: this.constraints,
         extraHeaders: extraHeaders,
         sessionTimersExpires: 120,
-        pcConfig: this.getCallOptionPcConfig(),
+        pcConfig: this.getCallOptionPcConfig()
       })
       //设置当前通话的session
       this.currentSession = this.outgoingSession
@@ -676,11 +632,11 @@ export default class SipCall {
     if (this.currentSession && this.currentSession.isInProgress()) {
       this.currentSession.answer({
         mediaConstraints: this.constraints,
-        pcConfig: this.getCallOptionPcConfig(),
+        pcConfig: this.getCallOptionPcConfig()
       })
     } else {
       this.onChangeState(State.ERROR, {
-        msg: '非法操作，通话尚未建立或状态不正确，请勿操作.',
+        msg: '非法操作，通话尚未建立或状态不正确，请勿操作.'
       })
     }
   }
@@ -691,7 +647,7 @@ export default class SipCall {
       this.currentSession.terminate()
     } else {
       this.onChangeState(State.ERROR, {
-        msg: '当前通话不存在，无法执行挂断操作。',
+        msg: '当前通话不存在，无法执行挂断操作。'
       })
     }
   }
@@ -747,49 +703,47 @@ export default class SipCall {
       this.currentSession.sendDTMF(tone, {
         duration: 160,
         interToneGap: 1200,
-        extraHeaders: [],
+        extraHeaders: []
       })
     }
   }
 
   //麦克风检测
   public micCheck() {
-    navigator.permissions
-      .query({ name: 'microphone' } as any)
-      .then((result) => {
-        if (result.state == 'denied') {
+    navigator.permissions.query({ name: 'microphone' } as any).then((result) => {
+      if (result.state == 'denied') {
+        this.onChangeState(State.MIC_ERROR, {
+          msg: '麦克风权限被禁用,请设置允许使用麦克风'
+        })
+        return
+      } else if (result.state == 'prompt') {
+        this.onChangeState(State.MIC_ERROR, {
+          msg: '麦克风权限未开启,请设置允许使用麦克风权限后重试'
+        })
+      }
+      //经过了上面的检测，这一步应该不需要了
+      if (navigator.mediaDevices == undefined) {
+        this.onChangeState(State.MIC_ERROR, {
+          msg: '麦克风检测异常,请检查麦克风权限是否开启,是否在HTTPS站点'
+        })
+        return
+      }
+      navigator.mediaDevices
+        .getUserMedia({
+          video: false,
+          audio: true
+        })
+        .then((_) => {
+          _.getTracks().forEach((track) => {
+            track.stop()
+          })
+        })
+        .catch(() => {
           this.onChangeState(State.MIC_ERROR, {
-            msg: '麦克风权限被禁用,请设置允许使用麦克风',
+            msg: '麦克风检测异常,请检查麦克风是否插好'
           })
-          return
-        } else if (result.state == 'prompt') {
-          this.onChangeState(State.MIC_ERROR, {
-            msg: '麦克风权限未开启,请设置允许使用麦克风权限后重试',
-          })
-        }
-        //经过了上面的检测，这一步应该不需要了
-        if (navigator.mediaDevices == undefined) {
-          this.onChangeState(State.MIC_ERROR, {
-            msg: '麦克风检测异常,请检查麦克风权限是否开启,是否在HTTPS站点',
-          })
-          return
-        }
-        navigator.mediaDevices
-          .getUserMedia({
-            video: false,
-            audio: true,
-          })
-          .then((_) => {
-            _.getTracks().forEach((track) => {
-              track.stop()
-            })
-          })
-          .catch(() => {
-            this.onChangeState(State.MIC_ERROR, {
-              msg: '麦克风检测异常,请检查麦克风是否插好',
-            })
-          })
-      })
+        })
+    })
   }
 
   //麦克风测试
@@ -823,12 +777,12 @@ export default class SipCall {
         },
         no: () => {
           stop()
-        },
+        }
       }
     } catch (e) {
       return {
         yes: () => {},
-        no: () => {},
+        no: () => {}
       }
     }
   }
