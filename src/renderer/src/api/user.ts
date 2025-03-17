@@ -23,6 +23,15 @@ export const agentLogin = (params: {
   return request(`/basic/agent-workbench/login`, 'POST', params)
 }
 
+export const agentWithoutCaptchaLogin = (params: {
+  number: string
+  password: string
+  nonce: string
+  timestamp: number
+}) => {
+  return request(`/basic/agent-workbench/client/login`, 'POST', params)
+}
+
 export const getCaptcha = async () => {
   try {
     const response = await request(

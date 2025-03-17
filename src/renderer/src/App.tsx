@@ -1,5 +1,5 @@
 import NotFound from './pages/NotFound'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import React from 'react'
 import { Route, Routes } from 'react-router-dom'
 import agentRouter from './agent-routes'
@@ -7,6 +7,8 @@ import { AuthGuard } from './auth/AuthGuard'
 import { Skeleton } from 'antd'
 import 'dayjs/locale/es-mx.js'
 import { useMenu } from './hooks/useMenu'
+import { useAuth } from './auth/useAuth'
+import { destroyAction, listenAction } from './action'
 
 const AppLayout = lazy(() => import('./layout'))
 const Login = lazy(() => import('./pages/login'))
@@ -24,6 +26,7 @@ const findMenuRoute = (path: string, routes: any[]): any => {
 }
 
 const App = () => {
+  const { loginWithoutCaptcha, isAuthenticated } = useAuth()
   const { route: menuRoutes } = useMenu()
 
   const renderRoutes = (routes: any[]): React.ReactNode[] => {
@@ -47,6 +50,16 @@ const App = () => {
       return result
     })
   }
+
+  console.log(loginWithoutCaptcha)
+
+  useEffect(() => {
+    listenAction(loginWithoutCaptcha)
+
+    return () => {
+      destroyAction()
+    }
+  }, [isAuthenticated])
 
   return (
     <div>

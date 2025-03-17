@@ -1,5 +1,5 @@
 import { WebContents } from 'electron'
-import { parseSipUrl } from '../utils/ index'
+import { parseSipUrl } from '../utils/index'
 import { isString } from 'lodash'
 
 // 拨打电话

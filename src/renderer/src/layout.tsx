@@ -27,8 +27,6 @@ import Dialpad from './components/dialpad'
 import StatusBar from './components/dialpad/status-bar'
 import useDialpad from './components/dialpad/dialpad'
 import { useMenu } from './hooks/useMenu'
-import { useAuth } from './auth/useAuth'
-import { destroyAction, listenAction } from './action'
 
 export type LayoutTabsType = {
   key: string
@@ -56,7 +54,6 @@ const Layout = () => {
   const { status, setNavigate } = useDialpad()
   const { t } = useTranslation()
   const [pathname, setPathname] = useState('/')
-  const { isAuthenticated } = useAuth()
   const { route: menuRoute } = useMenu()
   const routeLocation = useLocation()
   const navigate = useNavigate()
@@ -229,17 +226,6 @@ const Layout = () => {
     // 重置标志
     isMenuClick.current = false
   }, [routeLocation?.pathname, routeLocation?.search])
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      // 监听sip schema
-      listenAction()
-    }
-
-    return () => {
-      destroyAction()
-    }
-  }, [isAuthenticated])
 
   if (typeof document === 'undefined') {
     return <div />

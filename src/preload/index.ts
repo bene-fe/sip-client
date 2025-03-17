@@ -55,6 +55,19 @@ const api = {
     return () => {
       removeListener('sip-action', id)
     }
+  },
+  // 注册登录事件监听器
+  transferToLogin: (callback: (action: string, agentNumber: string, agentPasswd: string) => void) => {
+    const listener = (_, action, agentNumber, agentPasswd) => {
+      console.log('transferToLogin--->', action, agentNumber, agentPasswd)
+      callback(action, agentNumber, agentPasswd)
+    }
+
+    const id = registerListener('utils-action', listener)
+
+    return () => {
+      removeListener('utils-action', id)
+    }
   }
 }
 

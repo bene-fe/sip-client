@@ -1,6 +1,7 @@
 import { isString } from 'lodash-es'
 
 import useDialpad from './components/dialpad/dialpad'
+import { message } from 'antd'
 
 // 存储所有移除监听器的函数
 const cleanupFunctions: (() => void)[] = []
@@ -10,7 +11,7 @@ const registerListener = (listener: () => void): void => {
   cleanupFunctions.push(listener)
 }
 
-export const listenAction = () => {
+export const listenAction = (loginWithoutCaptcha: (username: string, password: string) => Promise<void>) => {
   const { makeCall } = useDialpad.getState()
 
   // 注册SIP呼叫事件监听器
@@ -20,9 +21,24 @@ export const listenAction = () => {
     }
   }
 
+  const transferToLoginCallback = (action: string, agentNumber: string, agentPasswd: string) => {
+    if (action === 'login' && isString(agentNumber) && isString(agentPasswd)) {
+      loginWithoutCaptcha(agentNumber, agentPasswd)
+        .then(() => {
+          message.success('登录成功')
+        })
+        .catch((error: any) => {
+          message.error(error.message)
+        })
+    }
+  }
+
   // 注册监听器并保存返回的移除函数
   const removeCallListener = window.api.makeCall(makeCallback)
   registerListener(removeCallListener)
+
+  const removeTransferToLoginListener = window.api.transferToLogin(transferToLoginCallback)
+  registerListener(removeTransferToLoginListener)
 
   // 可以注册更多监听器，例如：
   /*

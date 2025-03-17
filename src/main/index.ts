@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { sipAction } from './action/sip-schema-action'
+import { utilsAction } from './action/utils-schema-aciton'
 import actionListener from './action/index'
 
 function createWindow(): void {
@@ -81,7 +82,13 @@ app.whenReady().then(() => {
 
   app.setAsDefaultProtocolClient('sip')
   app.on('open-url', (_, url) => {
-    sipAction(BrowserWindow.getAllWindows()[0].webContents, url)
+    if (url.includes('action=call')) {
+      sipAction(BrowserWindow.getAllWindows()[0].webContents, url)
+    }
+
+    if (url.includes('action=login')) {
+      utilsAction(BrowserWindow.getAllWindows()[0].webContents, url)
+    }
   })
 
   // IPC Action Listenner

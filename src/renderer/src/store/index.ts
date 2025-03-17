@@ -25,7 +25,6 @@ const useStore = create<Store & Action>()(
       token: '',
       userInfo: null,
       currentTheme: theme.defaultAlgorithm,
-      isWorkBench: false,
       agentInfo: null,
       agentDetail: null,
       setCurrentTheme: (token) => set({ currentTheme: token }),
