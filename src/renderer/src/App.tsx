@@ -51,8 +51,6 @@ const App = () => {
     })
   }
 
-  console.log(loginWithoutCaptcha)
-
   useEffect(() => {
     listenAction(loginWithoutCaptcha)
 

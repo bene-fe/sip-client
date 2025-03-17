@@ -318,8 +318,7 @@ const useDialpad = create<Store & Action>()(
             }),
             sipInstance: new SipCall({
               ...loginInfo,
-              stateEventListener: get().setEventListener,
-              sipController: get().sipController
+              stateEventListener: get().setEventListener
             })
           })
         }
@@ -453,7 +452,7 @@ const useDialpad = create<Store & Action>()(
           case 'RECONNECT':
             break
           case 'REGISTER_FAILED':
-            set({ logStatus: false, loading: false })
+            set({ logStatus: false, loading: false, status: 1, loginLoading: false })
             message.error('Register failed')
             break
           case 'LATENCY_STAT':

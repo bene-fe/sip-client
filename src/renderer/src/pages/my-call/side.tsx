@@ -163,7 +163,7 @@ const MyCallSide = () => {
   ]
 
   return (
-    <div className="flex flex-col h-full w-[320px]">
+    <div className="flex flex-col h-full w-[340px]">
       <Spin spinning={loading}>
         {/* 顶部导航栏 */}
         <div className="flex flex-col border-b flex-none pb-2">
@@ -366,6 +366,7 @@ const MyCallSide = () => {
               />
             </>
           )}
+
           <div className="p-4 border-t flex-none">
             <Pagination
               current={currentPage}
