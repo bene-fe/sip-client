@@ -1,14 +1,16 @@
 import { create } from 'zustand'
-import SipClient from 'sip-call-ring'
 import { message } from 'antd'
 import { TimeAction } from './time-count'
 import myCallStore from '../../pages/my-call/my-call-store'
-import { checkRouteIsMyCall } from './utils'
 import { logout } from '../../utils'
 import { persist } from 'zustand/middleware'
+import SipCall from '../../sip'
+import SipController from '../../sip/controller'
+import dayjs from 'dayjs'
 
 type Store = {
-  sipInstance: SipClient | null
+  sipInstance: SipCall | null
+  sipController: SipController | null
   loading: boolean
   logStatus: boolean
   sipState: SipStateType
@@ -30,6 +32,42 @@ type Store = {
         completedCount: number
         totalCount: number
         customerAnsweredCount: number
+      }
+    }
+    status: number
+  }>
+  onCallingNumber: Array<{
+    process: {
+      type: number
+      taskCode: string
+      taskName: string
+      data: {
+        customerPhoneNumber: string
+        dialCount: string
+        uuid: string
+        isRedial: boolean
+        timestamp: string
+        businessId: string
+        extraInfo: string
+      }
+    }
+    status: number
+  }>
+  callEndNumber: Array<{
+    process: {
+      type: number
+      taskCode: string
+      taskName: string
+      data: {
+        customerPhoneNumber: string
+        status: number
+        uuid: string
+        isRedial: boolean
+        ringType: string
+        dialCount: number
+        businessId: string | null
+        extraInfo: string | null
+        timestamp: number
       }
     }
     status: number
@@ -82,7 +120,6 @@ type Action = {
   muteCall: () => void
   unmuteCall: () => void
   hangupCall: () => void
-  reLogin: () => void
   setLoginInfo: (loginInfo: any) => void
   wrapUp: (seconds: number) => void
   wrapUpEnd: () => void
@@ -90,7 +127,7 @@ type Action = {
   setCountTimeAction: (action: TimeAction) => void
   setCountCallAction: (action: TimeAction) => void
   makeCall: (num: string) => void
-  getOrgOnlineAgent: () => Promise<void>
+  getOrgOnlineAgent: () => void
   setNavigate: (navigate: any) => void
 }
 
@@ -98,6 +135,7 @@ const useDialpad = create<Store & Action>()(
   persist(
     (set, get) => ({
       sipInstance: null,
+      sipController: null,
       loading: false,
       logStatus: false,
       status: 1,
@@ -133,6 +171,8 @@ const useDialpad = create<Store & Action>()(
       countCallAction: TimeAction.Stop,
       discallee: '',
       callbackInfo: {},
+      callEndNumber: [],
+      onCallingNumber: [],
       groupCallInfo: [],
       navigate: null,
       setNavigate: (navigate: any) => set({ navigate }),
@@ -144,112 +184,13 @@ const useDialpad = create<Store & Action>()(
       setLoginInfo: (loginInfo: any) => {
         set({ loginInfo })
       },
-      reLogin: () => {
-        if (get().loginInfo) {
-          set({
-            loginInfo: get().loginInfo,
-            loginLoading: true,
-            sipInstance: new SipClient({
-              ...get().loginInfo,
-              stateEventListener: get().setEventListener,
-              statusListener: (status: number) => {
-                console.log('status--->', status)
-                set({ status, loginLoading: false })
-              },
-              callbackInfo: (info: any) => {
-                console.log('callbackInfo--->', info)
-                set({ callbackInfo: info })
-              },
-              groupCallNotify: (info: any) => {
-                console.log('groupCallInfo--->', info)
-                const currentGroupCallInfo = [...get().groupCallInfo]
-
-                if (info?.type == 2 && info?.taskCode) {
-                  // 查找是否已存在相同 taskCode 的任务
-                  const existingIndex = currentGroupCallInfo.findIndex(
-                    (item) => item.process.taskCode === info.taskCode
-                  )
-
-                  if (existingIndex >= 0) {
-                    // 更新已存在的任务数据
-                    currentGroupCallInfo[existingIndex] = {
-                      ...currentGroupCallInfo[existingIndex],
-                      process: info
-                    }
-                  } else {
-                    // 添加新任务
-                    currentGroupCallInfo.push({
-                      process: info,
-                      status: 0
-                    })
-                  }
-
-                  set({ groupCallInfo: currentGroupCallInfo })
-                }
-
-                if (info?.type == 1 && info?.data?.taskCode) {
-                  // 查找是否已存在相同 taskCode 的任务
-                  const existingIndex = currentGroupCallInfo.findIndex(
-                    (item) => item.process.taskCode === info.data.taskCode
-                  )
-
-                  if (existingIndex >= 0) {
-                    // 更新已存在的任务状态
-                    currentGroupCallInfo[existingIndex] = {
-                      ...currentGroupCallInfo[existingIndex],
-                      status: info?.data?.status
-                    }
-
-                    set({ groupCallInfo: currentGroupCallInfo })
-                  }
-                }
-              },
-              otherEvent: (info: any) => {
-                const { setMainTab, fetchTaskData, setCurrentTempCall } = myCallStore.getState()
-                if (info?.action === 'currentCallUuid') {
-                  const isMyCallRoute = checkRouteIsMyCall()
-                  if (!isMyCallRoute) {
-                    get().navigate('/agent-my-call')
-                  }
-                  if (info?.content?.callType && info?.content?.callUuid) {
-                    set({
-                      reloadCallRecord: !get().reloadCallRecord
-                    })
-                    setCurrentTempCall(info?.content)
-                    console.log('currentCallUuid--->', info?.content)
-                    if (info?.content?.callType !== 'GROUP_CALL') {
-                      setMainTab('normal')
-                    } else {
-                      setMainTab('task')
-                    }
-                    fetchTaskData()
-                  }
-                }
-
-                if (info.action === 'warpUpTimeNotify') {
-                  set({
-                    tidyTime: info.content
-                  })
-                }
-              },
-              kick: () => {
-                message.error('您的账号已在其他设备登录，您已被强制下线。')
-                setTimeout(() => {
-                  logout()
-                }, 2000)
-              }
-            })
-          })
-        }
-      },
       setSipInstance: (loginInfo: any) => {
         if (loginInfo) {
           set({
             loginInfo,
             loginLoading: true,
-            sipInstance: new SipClient({
+            sipController: new SipController({
               ...loginInfo,
-              stateEventListener: get().setEventListener,
               statusListener: (status: number) => {
                 console.log('status--->', status)
                 set({ status, loginLoading: false })
@@ -261,6 +202,8 @@ const useDialpad = create<Store & Action>()(
               groupCallNotify: (info: any) => {
                 console.log('groupCallInfo--->', info)
                 const currentGroupCallInfo = [...get().groupCallInfo]
+                const currentOnCallingNumber = [...get().onCallingNumber]
+                const currentCallEndNumber = [...get().callEndNumber]
 
                 if (info?.type == 2 && info?.taskCode) {
                   // 查找是否已存在相同 taskCode 的任务
@@ -276,7 +219,7 @@ const useDialpad = create<Store & Action>()(
                     }
                   } else {
                     // 添加新任务
-                    currentGroupCallInfo.push({
+                    currentGroupCallInfo.unshift({
                       process: info,
                       status: 0
                     })
@@ -301,14 +244,50 @@ const useDialpad = create<Store & Action>()(
                     set({ groupCallInfo: currentGroupCallInfo })
                   }
                 }
+
+                if (info?.type === 3) {
+                  if (info?.data?.timestamp) {
+                    if (currentOnCallingNumber.length > 0) {
+                      const lastItem = currentOnCallingNumber[currentOnCallingNumber.length - 1]
+                      const lastTimestamp = dayjs(lastItem.process.data.timestamp)
+                      const currentTimestamp = dayjs(info.data.timestamp)
+                      const diffSeconds = currentTimestamp.diff(lastTimestamp, 'seconds')
+                      if (diffSeconds > 3) {
+                        currentOnCallingNumber.shift() // 删除第一个元素
+                      }
+                      currentOnCallingNumber.push({
+                        process: info,
+                        status: 0
+                      })
+                    } else {
+                      currentOnCallingNumber.push({
+                        process: info,
+                        status: 0
+                      })
+                    }
+                  }
+                  set({ onCallingNumber: currentOnCallingNumber })
+                }
+                if (info?.type === 4) {
+                  if (info?.data?.timestamp) {
+                    const tempCurrentOnCallingumber = currentOnCallingNumber.filter((item) => {
+                      return item.process.data.uuid !== info.data.uuid
+                    })
+
+                    currentCallEndNumber.push({
+                      process: info,
+                      status: 0
+                    })
+                    set({
+                      onCallingNumber: tempCurrentOnCallingumber,
+                      callEndNumber: currentCallEndNumber
+                    })
+                  }
+                }
               },
               otherEvent: (info: any) => {
                 const { setMainTab, fetchTaskData, setCurrentTempCall } = myCallStore.getState()
                 if (info?.action === 'currentCallUuid') {
-                  const isMyCallRoute = checkRouteIsMyCall()
-                  if (!isMyCallRoute) {
-                    get().navigate('/agent-my-call')
-                  }
                   if (info?.content?.callType && info?.content?.callUuid) {
                     set({
                       reloadCallRecord: !get().reloadCallRecord
@@ -336,6 +315,10 @@ const useDialpad = create<Store & Action>()(
                   logout()
                 }, 2000)
               }
+            }),
+            sipInstance: new SipCall({
+              ...loginInfo,
+              stateEventListener: get().setEventListener
             })
           })
         }
@@ -488,7 +471,7 @@ const useDialpad = create<Store & Action>()(
         set({ countCallAction: action })
       },
       transferCall: async (num: string) => {
-        return get().sipInstance?.transferCall(num)
+        get().sipInstance?.transferCall(num)
       },
       makeCall: (num: string) => {
         get().sipInstance?.call(num)
@@ -526,14 +509,16 @@ const useDialpad = create<Store & Action>()(
       wrapUpEnd: () => {
         get().sipInstance?.wrapUpCancel()
       },
-      getOrgOnlineAgent: async () => {
-        return get().sipInstance?.getOrgOnlineAgent()
+      getOrgOnlineAgent: () => {
+        get().sipInstance?.getOrgOnlineAgent()
       },
       logout: () => {
+        get().sipController?.logout()
         get().sipInstance?.unregister()
         set({
           callbackInfo: {},
           sipInstance: null,
+          sipController: null,
           status: 1,
           currentCallNumber: '',
           reloadCallRecord: false

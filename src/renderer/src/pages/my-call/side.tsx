@@ -1,11 +1,12 @@
 import { callOutIcon, callInIcon } from './call-icon'
 import { useEffect, useState } from 'react'
-import { Input, Pagination, Select, Tag, Space, Tooltip, Spin } from 'antd'
+import { Input, Pagination, Select, Tag, Space, Tooltip, Spin, Tabs } from 'antd'
 import myCallStore from './my-call-store'
 import useDialpadStore from '../../components/dialpad/dialpad'
 import { SearchOutlined, PhoneOutlined, CheckCircleOutlined, TeamOutlined, BarChartOutlined } from '@ant-design/icons'
 import { TaskStatus, TaskStatusLabel, TaskStatusColor } from '../../constants/taskStatus'
 import { useTranslation } from 'react-i18next'
+import dayjs from 'dayjs'
 
 // 定义通话状态枚举
 enum CallStatus {
@@ -14,6 +15,18 @@ enum CallStatus {
   OUTGOING_ACTIVE = 2, // 呼出：拨打、通话中
   OUTGOING_FAILED = 3, // 呼出：挂断、呼叫失败
   PENDING = 4 // 待拨打/取消拨打
+}
+
+const RingTypeMap = {
+  busy: 'Busy',
+  out_area_or_offline: 'Out of Area or Offline',
+  wrong_number: 'Wrong Number',
+  failed: 'Failed',
+  hold_line: 'Hold Line',
+  rejected: 'Rejected',
+  no_answer: 'No Answer',
+  answered: 'Answered',
+  unknown: 'Unknown'
 }
 
 const MyCallSide = () => {
@@ -36,10 +49,11 @@ const MyCallSide = () => {
     setCurrentCustomer,
     selectedRecordId
   } = myCallStore()
-  const { groupCallInfo, reloadCallRecord } = useDialpadStore()
+  const { groupCallInfo, reloadCallRecord, onCallingNumber, callEndNumber } = useDialpadStore()
 
   // 当前选中的任务索引
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(0)
+  const [currentTab, setCurrentTab] = useState<'onCall' | 'callEnd'>('onCall')
 
   // 监听筛选条件变化
   useEffect(() => {
@@ -83,6 +97,70 @@ const MyCallSide = () => {
         }
     }
   }
+
+  const tabList = [
+    {
+      key: 'onCall',
+      label: `正在呼叫: ${onCallingNumber.length}`,
+      children: (
+        <>
+          {onCallingNumber.map((item, index) => (
+            <div
+              key={index}
+              className={`flex items-center p-3 border-b hover:bg-gray-100 max-h-[400px] cursor-pointer select-none overflow-y-auto`}
+            >
+              <div className="w-8 h-8 mr-3 flex-none">
+                <div className="w-full h-full rounded-full flex items-center justify-center">
+                  <span className="text-xl">{callOutIcon('w-8 h-8', 'green')}</span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between">
+                  <span className={`font-medium truncate`}>-{/*{item.process.data}*/}</span>
+                  <span className="text-gray-500 text-sm flex-none ml-2">
+                    {dayjs(item.process.data.timestamp).format('HH:mm:ss')}
+                  </span>
+                </div>
+                <div className={`text-sm truncate`}>{item.process.data.customerPhoneNumber}</div>
+              </div>
+            </div>
+          ))}
+        </>
+      )
+    },
+    {
+      key: 'callEnd',
+      label: `呼叫结束: ${callEndNumber.length}`,
+      children: (
+        <>
+          {callEndNumber.map((item, index) => (
+            <div
+              key={index}
+              className={`flex items-center p-3 border-b hover:bg-gray-100 max-h-[400px] cursor-pointer select-none overflow-y-auto`}
+            >
+              <div className="w-8 h-8 mr-3 flex-none">
+                <div className="w-full h-full rounded-full flex items-center justify-center">
+                  <span className="text-xl">{callOutIcon('w-8 h-8', 'green')}</span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between">
+                  <span className={`font-medium truncate`}>-{/*{item.process.data}*/}</span>
+                  <span className="text-gray-500 text-sm flex-none ml-2">
+                    {dayjs(item.process.data.timestamp).format('HH:mm:ss')}
+                  </span>
+                </div>
+                <div className={`text-sm truncate flex justify-between`}>
+                  <span>{item.process.data.customerPhoneNumber}</span>
+                  <span>{RingTypeMap[item.process.data.ringType as keyof typeof RingTypeMap] || '-'}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </>
+      )
+    }
+  ]
 
   return (
     <div className="flex flex-col h-full w-[320px]">
@@ -163,30 +241,31 @@ const MyCallSide = () => {
           </div>
           {mainTab === 'task' && groupCallInfo.length > 0 && (
             <div className="p-2 border-b">
-              {groupCallInfo.length > 0 && (
-                <div className="mb-2">
-                  <Select
-                    className="w-full"
-                    value={selectedTaskIndex}
-                    onChange={(value) => setSelectedTaskIndex(value)}
-                    showSearch
-                    optionFilterProp="children"
-                    filterOption={(input, option) => {
-                      return option?.children?.toString().toLowerCase().includes(input.toLowerCase()) || false
-                    }}
-                  >
-                    {groupCallInfo.map((info, index) => (
-                      <Select.Option key={index} value={index}>
-                        {t('myCall.task')} {index + 1}: {info.process.taskName || t('myCall.unknownTask')}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </div>
-              )}
-
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-700">{t('myCall.taskStatus')}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-gray-700">{t('myCall.taskStatus')}</span>
+                    {groupCallInfo.length > 0 && (
+                      <>
+                        <Select
+                          className="w-[190px]"
+                          value={selectedTaskIndex}
+                          onChange={(value) => setSelectedTaskIndex(value)}
+                          showSearch
+                          optionFilterProp="children"
+                          filterOption={(input, option) => {
+                            return option?.children?.toString().toLowerCase().includes(input.toLowerCase()) || false
+                          }}
+                        >
+                          {groupCallInfo.map((info, index) => (
+                            <Select.Option key={index} value={index}>
+                              {t('myCall.task')} {index + 1}: {info.process.taskName || t('myCall.unknownTask')}
+                            </Select.Option>
+                          ))}
+                        </Select>
+                      </>
+                    )}
+                  </div>
                   {groupCallInfo[selectedTaskIndex]?.status !== undefined && (
                     <Tag color={TaskStatusColor[groupCallInfo[selectedTaskIndex].status as TaskStatus]}>
                       {TaskStatusLabel[groupCallInfo[selectedTaskIndex].status as TaskStatus]}
@@ -270,6 +349,23 @@ const MyCallSide = () => {
               )
             })}
           </div>
+          {/* 暂无通话提示 */}
+          {!loading && taskData.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">📞</div>
+              <span>{t('myCall.noCalls')}</span>
+            </div>
+          )}
+
+          {mainTab === 'task' && (
+            <>
+              <Tabs
+                items={tabList}
+                activeKey={currentTab}
+                onChange={(key) => setCurrentTab(key as 'onCall' | 'callEnd')}
+              />
+            </>
+          )}
           <div className="p-4 border-t flex-none">
             <Pagination
               current={currentPage}
@@ -281,14 +377,6 @@ const MyCallSide = () => {
             />
           </div>
         </div>
-
-        {/* 暂无通话提示 */}
-        {!loading && taskData.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">📞</div>
-            <span>{t('myCall.noCalls')}</span>
-          </div>
-        )}
       </Spin>
     </div>
   )
