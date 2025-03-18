@@ -12,7 +12,7 @@ function createWindow(): void {
     height: 850,
     show: false,
     autoHideMenuBar: true,
-    icon: nativeImage.createFromPath(icon).resize({ width: 16, height: 16 }),
+    icon,
     webPreferences: {
       webSecurity: false,
       preload: join(__dirname, '../preload/index.js'),

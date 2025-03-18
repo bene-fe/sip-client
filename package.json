@@ -1,5 +1,5 @@
 {
-  "name": "sip-client",
+  "name": "sip client",
   "version": "0.0.4",
   "description": "SIP Client",
   "main": "./out/main/index.js",
