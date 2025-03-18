@@ -39,7 +39,6 @@
     "react-i18next": "^15.4.1",
     "react-router": "^6.29.0",
     "react-router-dom": "^7.2.0",
-    "sip-call-ring": "^1.5.6",
     "zustand": "^4.5.6"
   },
   "devDependencies": {

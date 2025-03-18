@@ -1,7 +1,7 @@
 import Graggable from './graggable'
 import useDialpad from './dialpad'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import SipCall from 'sip-call-ring'
+import SipCall from '../../sip'
 import TimeCount, { TimeAction } from './time-count'
 import { Avatar, Button, Input } from 'antd'
 import { PhoneFilled, UserOutlined, SyncOutlined, SearchOutlined } from '@ant-design/icons'

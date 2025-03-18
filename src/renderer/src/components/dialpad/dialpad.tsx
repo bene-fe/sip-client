@@ -251,12 +251,12 @@ const useDialpad = create<Store & Action>()(
                     if (diffSeconds > 3) {
                       currentOnCallingNumber.shift() // 删除第一个元素
                     }
-                    currentOnCallingNumber.push({
+                    currentOnCallingNumber.unshift({
                       process: info,
                       status: 0
                     })
                   } else {
-                    currentOnCallingNumber.push({
+                    currentOnCallingNumber.unshift({
                       process: info,
                       status: 0
                     })
@@ -270,7 +270,7 @@ const useDialpad = create<Store & Action>()(
                     return item.process.data.uuid !== info.data.uuid
                   })
 
-                  currentCallEndNumber.push({
+                  currentCallEndNumber.unshift({
                     process: info,
                     status: 0
                   })
