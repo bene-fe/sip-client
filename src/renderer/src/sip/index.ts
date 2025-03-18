@@ -40,6 +40,14 @@ interface InitConfig {
   kick: () => void
 }
 
+// 重连配置
+interface ReconnectConfig {
+  enabled: boolean
+  maxAttempts: number
+  interval: number
+  backoffFactor: number
+}
+
 interface StunConfig {
   type: StunType
   host: string
@@ -112,7 +120,10 @@ const enum State {
   CALL_END = 'CALL_END', //通话结束
   MUTE = 'MUTE', //静音
   UNMUTE = 'UNMUTE', //取消静音
-  LATENCY_STAT = 'LATENCY_STAT' //网络延迟统计
+  LATENCY_STAT = 'LATENCY_STAT', //网络延迟统计
+  RECONNECTING = 'RECONNECTING', //正在重连
+  RECONNECT_FAILED = 'RECONNECT_FAILED', //重连失败
+  RECONNECT_SUCCESS = 'RECONNECT_SUCCESS' //重连成功
 }
 
 export default class SipCall {
@@ -143,6 +154,14 @@ export default class SipCall {
   private currentLatencyStatTimer: NodeJS.Timeout | undefined
   private currentStatReport: NetworkLatencyStat
 
+  // 重连相关属性
+  private reconnectConfig: ReconnectConfig
+  private reconnectTimer: NodeJS.Timeout | null = null
+  private reconnectAttempts: number = 0
+  private isReconnecting: boolean = false
+  private manualDisconnect: boolean = false
+  private sipConfig: InitConfig | null = null
+
   //回调函数
   private stateEventListener: ((event: string, data: any) => void | undefined) | undefined
 
@@ -150,12 +169,23 @@ export default class SipCall {
 
   //构造函数-初始化SDK
   constructor(config: InitConfig) {
+    // 初始化重连配置
+    this.reconnectConfig = {
+      enabled: true,
+      maxAttempts: 10,
+      interval: 5000,
+      backoffFactor: 1.5
+    }
+
     //坐席号码
     this.localAgent = config.extNo
     if (undefined === config.domain || config.domain.length <= 0) {
       config.domain = config.host
     }
     this.stunConfig = config.stun
+
+    // 保存配置，用于重连
+    this.sipConfig = config
 
     //注入状态回调函数
     if (config.stateEventListener !== null) {
@@ -185,7 +215,16 @@ export default class SipCall {
     }
 
     if (config.extNo && config.extPwd) {
-      getSipWebrtcAddr().then((res: any) => {
+      this.initSipConnection(config)
+    } else {
+      throw new Error('username or password is required')
+    }
+  }
+
+  // 提取初始化逻辑到单独方法以便重连时调用
+  private initSipConnection(config: InitConfig) {
+    getSipWebrtcAddr()
+      .then((res: any) => {
         if (res?.data) {
           // JsSIP.C.SESSION_EXPIRES=120,JsSIP.C.MIN_SESSION_EXPIRES=120;
           const proto = res?.data?.ssl ? 'wss' : 'ws'
@@ -206,46 +245,77 @@ export default class SipCall {
 
           //websocket连接成功
           this.ua.on('connected', () => {
-            this.onChangeState(State.CONNECTED, null)
+            console.log('SIP WebSocket 已连接')
+            // 如果正在重连，发送重连成功事件
+            if (this.isReconnecting) {
+              this.isReconnecting = false
+              this.reconnectAttempts = 0
+              this.clearReconnectTimer()
+              this.onChangeState(State.RECONNECT_SUCCESS, { localAgent: this.localAgent })
+            } else {
+              this.onChangeState(State.CONNECTED, null)
+            }
+
             //自动注册
             if (config.autoRegister) {
               this.ua.register()
             }
           })
+
           //websocket连接失败
           this.ua.on('disconnected', (e: any) => {
+            console.log('SIP WebSocket 已断开', e?.reason)
             this.ua.stop()
             this.socket = null
+
             if (e.error) {
               this.onChangeState(State.DISCONNECTED, e.reason)
             }
+
+            // 如果不是手动断开且重连功能已启用，则尝试重连
+            if (!this.manualDisconnect && this.reconnectConfig.enabled) {
+              this.startReconnect()
+            }
           })
+
           //注册成功
           this.ua.on('registered', () => {
+            console.log('SIP 已注册')
             this.onChangeState(State.REGISTERED, {
               localAgent: this.localAgent
             })
           })
+
           //取消注册
           this.ua.on('unregistered', () => {
-            // console.log("unregistered:", e);
+            console.log('SIP 已取消注册')
             this.ua.stop()
             this.onChangeState(State.UNREGISTERED, {
               localAgent: this.localAgent
             })
           })
+
           //注册失败
           this.ua.on('registrationFailed', (e) => {
-            // console.error("registrationFailed", e)
+            console.error('SIP 注册失败', e.cause)
             this.onChangeState(State.REGISTER_FAILED, {
               msg: '注册失败:' + e.cause
             })
+
+            // 如果在重连过程中遇到注册失败，可能是凭证错误，停止重连
+            // 我们不直接比较特定的错误类型，而是判断是否正在重连
+            if (this.isReconnecting) {
+              // 网络问题通常会由 disconnected 事件处理，所以这里认为是认证问题
+              this.stopReconnect('认证失败或其他非网络原因，停止重连')
+            }
+
             this.ua.stop()
             this.socket = null
           })
+
           //Fired a few seconds before the registration expires
           this.ua.on('registrationExpiring', () => {
-            // console.log("registrationExpiring")
+            console.log('SIP 注册即将过期，重新注册')
             this.ua.register()
           })
 
@@ -370,9 +440,92 @@ export default class SipCall {
           this.ua.start()
         }
       })
-    } else {
-      throw new Error('username or password is required')
+      .catch((error) => {
+        console.error('获取SIP地址失败:', error)
+        // 如果是网络错误且重连功能启用，尝试重连
+        if (this.reconnectConfig.enabled) {
+          this.startReconnect()
+        }
+      })
+  }
+
+  // 重连相关方法
+  private startReconnect() {
+    if (this.isReconnecting || this.manualDisconnect) return
+
+    this.isReconnecting = true
+    this.reconnectAttempts = 0
+    this.onChangeState(State.RECONNECTING, {
+      localAgent: this.localAgent,
+      msg: '网络连接断开，正在尝试重连'
+    })
+    this.tryReconnect()
+  }
+
+  private tryReconnect() {
+    if (this.manualDisconnect) {
+      this.stopReconnect('手动断开，停止重连')
+      return
     }
+
+    if (this.reconnectAttempts >= this.reconnectConfig.maxAttempts) {
+      this.stopReconnect('达到最大重连次数，停止重连')
+      return
+    }
+
+    const currentInterval =
+      this.reconnectConfig.interval * Math.pow(this.reconnectConfig.backoffFactor, this.reconnectAttempts)
+
+    console.log(
+      `SIP尝试重连 (${this.reconnectAttempts + 1}/${this.reconnectConfig.maxAttempts}), 等待${currentInterval}ms`
+    )
+
+    this.reconnectTimer = setTimeout(() => {
+      if (this.manualDisconnect) {
+        this.stopReconnect('手动断开，停止重连')
+        return
+      }
+
+      this.reconnectAttempts++
+
+      // 如果配置存在，尝试重新初始化
+      if (this.sipConfig) {
+        this.initSipConnection(this.sipConfig)
+      } else {
+        this.stopReconnect('配置丢失，无法重连')
+      }
+    }, currentInterval)
+  }
+
+  private stopReconnect(reason: string) {
+    console.log('停止重连:', reason)
+    this.clearReconnectTimer()
+    this.isReconnecting = false
+
+    this.onChangeState(State.RECONNECT_FAILED, {
+      localAgent: this.localAgent,
+      msg: reason
+    })
+  }
+
+  private clearReconnectTimer() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
+  }
+
+  // 设置重连参数
+  public setReconnectConfig(config: Partial<ReconnectConfig>) {
+    this.reconnectConfig = { ...this.reconnectConfig, ...config }
+  }
+
+  // 手动触发重连
+  public manualReconnect() {
+    if (this.isReconnecting) return
+
+    this.manualDisconnect = false
+    this.startReconnect()
   }
 
   //处理音频播放
@@ -506,9 +659,15 @@ export default class SipCall {
 
   //注册请求
   public register() {
-    if (this.ua.isConnected()) {
+    this.manualDisconnect = false
+    if (this.ua && this.ua.isConnected()) {
       this.ua.register()
     } else {
+      // 如果UA未连接但配置存在，尝试重新连接
+      if (this.sipConfig && !this.isReconnecting) {
+        this.startReconnect()
+        return
+      }
       this.onChangeState(State.ERROR, {
         msg: 'websocket尚未连接，请先连接ws服务器.'
       })
@@ -517,6 +676,9 @@ export default class SipCall {
 
   //取消注册
   public unregister() {
+    this.manualDisconnect = true
+    this.clearReconnectTimer()
+
     if (this.ua && this.ua.isConnected() && this.ua.isRegistered()) {
       this.ua.unregister({ all: true })
       this.socket = null
@@ -531,6 +693,8 @@ export default class SipCall {
     //清理sdk
     this.stopAudio()
     this.cleanCallingData()
+    this.clearReconnectTimer()
+
     if (this.ua) {
       this.ua.stop()
     }
@@ -589,6 +753,11 @@ export default class SipCall {
 
     if (this.currentSession && !this.currentSession.isEnded()) {
       throw new Error('当前通话尚未结束，无法发起新的呼叫。')
+    }
+
+    // 检查连接状态
+    if (this.isReconnecting) {
+      throw new Error('正在重连中，无法发起呼叫。')
     }
 
     //注册情况下发起呼叫
