@@ -91,6 +91,14 @@ app.whenReady().then(() => {
     }
   })
 
+  // for windows system
+  app.on('second-instance', () => {
+    if (BrowserWindow.getAllWindows()[0]) {
+      if (BrowserWindow.getAllWindows()[0].isMinimized()) BrowserWindow.getAllWindows()[0].restore()
+      BrowserWindow.getAllWindows()[0].focus()
+    }
+  })
+
   // IPC Action Listenner
   actionListener(BrowserWindow.getAllWindows()[0])
 

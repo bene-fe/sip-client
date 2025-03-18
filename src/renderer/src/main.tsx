@@ -5,7 +5,7 @@ import './i18n'
 import { ConfigProvider, theme } from 'antd'
 import { StyleProvider } from '@ant-design/cssinjs'
 import { ProConfigProvider } from '@ant-design/pro-components'
-import { BrowserRouter } from 'react-router-dom'
+import { HashRouter } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 // 导入 antd 的语言包
 import zhCN from 'antd/locale/zh_CN'
@@ -48,11 +48,11 @@ export const Root = () => {
     >
       <StyleProvider hashPriority="high">
         <ProConfigProvider>
-          <BrowserRouter>
+          <HashRouter>
             <AuthProvider>
               <App />
             </AuthProvider>
-          </BrowserRouter>
+          </HashRouter>
         </ProConfigProvider>
       </StyleProvider>
     </ConfigProvider>

@@ -6,6 +6,8 @@ import useLanguageStore from '../../store/language'
 import { getCaptcha } from '../../api/user'
 import { useTranslation } from 'react-i18next'
 import { UserOutlined, LockOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
+import bgImg from '../../../public/bg.png'
+import titleLogo from '../../../public/title-logo.png'
 
 interface LoginForm {
   username: string
@@ -80,20 +82,20 @@ const Login = () => {
     <div className="min-h-screen flex flex-col relative bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Decorative elements */}
       <div className="absolute left-0 top-16 w-1/4 aspect-square opacity-60 animate-pulse">
-        <img src="/bg.png" alt="" className="w-full h-full object-contain" />
+        <img src={bgImg} alt="" className="w-full h-full object-contain" />
       </div>
       <div
         className="absolute right-0 bottom-0 w-1/4 aspect-square opacity-60 animate-pulse"
         style={{ animationDelay: '1s' }}
       >
-        <img src="/bg.png" alt="" className="w-full h-full object-contain" />
+        <img src={bgImg} alt="" className="w-full h-full object-contain" />
       </div>
 
       {/* Header */}
       <div className="relative z-10 w-full bg-white shadow-md">
         <div className="max-w-7xl mx-auto h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
-            <img src="/title-logo.png" alt="Jingle Byte" className="h-10 transition-transform hover:scale-105" />
+            <img src={titleLogo} alt="Jingle Byte" className="h-10 transition-transform hover:scale-105" />
             <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
               Jingle Byte
             </span>
