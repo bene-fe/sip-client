@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, Menu, Tray, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.ico?asset'
+import icon from '../../resources/icon.png?asset'
 import { sipAction } from './action/sip-schema-action'
 import { utilsAction } from './action/utils-schema-aciton'
 import actionListener from './action/index'
