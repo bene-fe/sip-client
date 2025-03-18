@@ -186,139 +186,141 @@ const useDialpad = create<Store & Action>()(
       },
       setSipInstance: (loginInfo: any) => {
         if (loginInfo) {
-          set({
-            loginInfo,
-            loginLoading: true,
-            sipController: new SipController({
-              ...loginInfo,
-              statusListener: (status: number) => {
-                console.log('status--->', status)
-                set({ status, loginLoading: false })
-              },
-              callbackInfo: (info: any) => {
-                console.log('callbackInfo--->', info)
-                set({ callbackInfo: info })
-              },
-              groupCallNotify: (info: any) => {
-                console.log('groupCallInfo--->', info)
-                const currentGroupCallInfo = [...get().groupCallInfo]
-                const currentOnCallingNumber = [...get().onCallingNumber]
-                const currentCallEndNumber = [...get().callEndNumber]
+          console.log('loginInfo--->', loginInfo)
+          const sipController = new SipController({
+            ...loginInfo,
+            statusListener: (status: number) => {
+              console.log('status--->', status)
+              set({ status, loginLoading: false })
+            },
+            callbackInfo: (info: any) => {
+              console.log('callbackInfo--->', info)
+              set({ callbackInfo: info })
+            },
+            groupCallNotify: (info: any) => {
+              console.log('groupCallInfo--->', info)
+              const currentGroupCallInfo = [...get().groupCallInfo]
+              const currentOnCallingNumber = [...get().onCallingNumber]
+              const currentCallEndNumber = [...get().callEndNumber]
 
-                if (info?.type == 2 && info?.taskCode) {
-                  // 查找是否已存在相同 taskCode 的任务
-                  const existingIndex = currentGroupCallInfo.findIndex(
-                    (item) => item.process.taskCode === info.taskCode
-                  )
+              if (info?.type == 2 && info?.taskCode) {
+                // 查找是否已存在相同 taskCode 的任务
+                const existingIndex = currentGroupCallInfo.findIndex((item) => item.process.taskCode === info.taskCode)
 
-                  if (existingIndex >= 0) {
-                    // 更新已存在的任务数据
-                    currentGroupCallInfo[existingIndex] = {
-                      ...currentGroupCallInfo[existingIndex],
-                      process: info
-                    }
-                  } else {
-                    // 添加新任务
-                    currentGroupCallInfo.unshift({
-                      process: info,
-                      status: 0
-                    })
+                if (existingIndex >= 0) {
+                  // 更新已存在的任务数据
+                  currentGroupCallInfo[existingIndex] = {
+                    ...currentGroupCallInfo[existingIndex],
+                    process: info
+                  }
+                } else {
+                  // 添加新任务
+                  currentGroupCallInfo.unshift({
+                    process: info,
+                    status: 0
+                  })
+                }
+
+                set({ groupCallInfo: currentGroupCallInfo })
+              }
+
+              if (info?.type == 1 && info?.data?.taskCode) {
+                // 查找是否已存在相同 taskCode 的任务
+                const existingIndex = currentGroupCallInfo.findIndex(
+                  (item) => item.process.taskCode === info.data.taskCode
+                )
+
+                if (existingIndex >= 0) {
+                  // 更新已存在的任务状态
+                  currentGroupCallInfo[existingIndex] = {
+                    ...currentGroupCallInfo[existingIndex],
+                    status: info?.data?.status
                   }
 
                   set({ groupCallInfo: currentGroupCallInfo })
                 }
+              }
 
-                if (info?.type == 1 && info?.data?.taskCode) {
-                  // 查找是否已存在相同 taskCode 的任务
-                  const existingIndex = currentGroupCallInfo.findIndex(
-                    (item) => item.process.taskCode === info.data.taskCode
-                  )
-
-                  if (existingIndex >= 0) {
-                    // 更新已存在的任务状态
-                    currentGroupCallInfo[existingIndex] = {
-                      ...currentGroupCallInfo[existingIndex],
-                      status: info?.data?.status
+              if (info?.type === 3) {
+                if (info?.data?.timestamp) {
+                  if (currentOnCallingNumber.length > 0) {
+                    const lastItem = currentOnCallingNumber[currentOnCallingNumber.length - 1]
+                    const lastTimestamp = dayjs(lastItem.process.data.timestamp)
+                    const currentTimestamp = dayjs(info.data.timestamp)
+                    const diffSeconds = currentTimestamp.diff(lastTimestamp, 'seconds')
+                    if (diffSeconds > 3) {
+                      currentOnCallingNumber.shift() // 删除第一个元素
                     }
-
-                    set({ groupCallInfo: currentGroupCallInfo })
-                  }
-                }
-
-                if (info?.type === 3) {
-                  if (info?.data?.timestamp) {
-                    if (currentOnCallingNumber.length > 0) {
-                      const lastItem = currentOnCallingNumber[currentOnCallingNumber.length - 1]
-                      const lastTimestamp = dayjs(lastItem.process.data.timestamp)
-                      const currentTimestamp = dayjs(info.data.timestamp)
-                      const diffSeconds = currentTimestamp.diff(lastTimestamp, 'seconds')
-                      if (diffSeconds > 3) {
-                        currentOnCallingNumber.shift() // 删除第一个元素
-                      }
-                      currentOnCallingNumber.push({
-                        process: info,
-                        status: 0
-                      })
-                    } else {
-                      currentOnCallingNumber.push({
-                        process: info,
-                        status: 0
-                      })
-                    }
-                  }
-                  set({ onCallingNumber: currentOnCallingNumber })
-                }
-                if (info?.type === 4) {
-                  if (info?.data?.timestamp) {
-                    const tempCurrentOnCallingumber = currentOnCallingNumber.filter((item) => {
-                      return item.process.data.uuid !== info.data.uuid
-                    })
-
-                    currentCallEndNumber.push({
+                    currentOnCallingNumber.push({
                       process: info,
                       status: 0
                     })
-                    set({
-                      onCallingNumber: tempCurrentOnCallingumber,
-                      callEndNumber: currentCallEndNumber
+                  } else {
+                    currentOnCallingNumber.push({
+                      process: info,
+                      status: 0
                     })
                   }
                 }
-              },
-              otherEvent: (info: any) => {
-                const { setMainTab, fetchTaskData, setCurrentTempCall } = myCallStore.getState()
-                if (info?.action === 'currentCallUuid') {
-                  if (info?.content?.callType && info?.content?.callUuid) {
-                    set({
-                      reloadCallRecord: !get().reloadCallRecord
-                    })
-                    setCurrentTempCall(info?.content)
-                    console.log('currentCallUuid--->', info?.content)
-                    if (info?.content?.callType !== 'GROUP_CALL') {
-                      setMainTab('normal')
-                    } else {
-                      setMainTab('task')
-                    }
-                    fetchTaskData()
-                  }
-                }
+                set({ onCallingNumber: currentOnCallingNumber })
+              }
+              if (info?.type === 4) {
+                if (info?.data?.timestamp) {
+                  const tempCurrentOnCallingumber = currentOnCallingNumber.filter((item) => {
+                    return item.process.data.uuid !== info.data.uuid
+                  })
 
-                if (info.action === 'warpUpTimeNotify') {
+                  currentCallEndNumber.push({
+                    process: info,
+                    status: 0
+                  })
                   set({
-                    tidyTime: info.content
+                    onCallingNumber: tempCurrentOnCallingumber,
+                    callEndNumber: currentCallEndNumber
                   })
                 }
-              },
-              kick: () => {
-                message.error('您的账号已在其他设备登录，您已被强制下线。')
-                setTimeout(() => {
-                  logout()
-                }, 2000)
               }
-            }),
+            },
+            otherEvent: (info: any) => {
+              const { setMainTab, fetchTaskData, setCurrentTempCall } = myCallStore.getState()
+              if (info?.action === 'currentCallUuid') {
+                if (info?.content?.callType && info?.content?.callUuid) {
+                  set({
+                    reloadCallRecord: !get().reloadCallRecord
+                  })
+                  setCurrentTempCall(info?.content)
+                  console.log('currentCallUuid--->', info?.content)
+                  if (info?.content?.callType !== 'GROUP_CALL') {
+                    setMainTab('normal')
+                  } else {
+                    setMainTab('task')
+                  }
+                  fetchTaskData()
+                }
+              }
+
+              if (info.action === 'warpUpTimeNotify') {
+                set({
+                  tidyTime: info.content
+                })
+              }
+            },
+            kick: () => {
+              message.error('您的账号已在其他设备登录，您已被强制下线。')
+              setTimeout(() => {
+                logout()
+              }, 2000)
+            }
+          })
+
+          set({
+            loginInfo,
+            loginLoading: true,
+            sipController: sipController,
             sipInstance: new SipCall({
               ...loginInfo,
-              stateEventListener: get().setEventListener
+              stateEventListener: get().setEventListener,
+              sipController: sipController // 传递SipController实例给SipCall
             })
           })
         }

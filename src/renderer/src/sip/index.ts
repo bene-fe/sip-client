@@ -19,6 +19,7 @@ import {
   wrapUp,
   wrapUpCancel
 } from './request'
+import SipController from './controller'
 
 //初始化配置
 interface InitConfig {
@@ -38,6 +39,7 @@ interface InitConfig {
   groupCallNotify: (info: any) => void
   otherEvent: (info: any) => void
   kick: () => void
+  sipController?: SipController
 }
 
 // 重连配置
@@ -162,6 +164,9 @@ export default class SipCall {
   private manualDisconnect: boolean = false
   private sipConfig: InitConfig | null = null
 
+  // SipController实例
+  private sipController?: SipController
+
   //回调函数
   private stateEventListener: ((event: string, data: any) => void | undefined) | undefined
 
@@ -183,6 +188,9 @@ export default class SipCall {
       config.domain = config.host
     }
     this.stunConfig = config.stun
+
+    // 保存SipController实例
+    this.sipController = config.sipController
 
     // 保存配置，用于重连
     this.sipConfig = config
@@ -764,6 +772,12 @@ export default class SipCall {
     this.currentCallId = uuidv4()
     if (this.ua && this.ua.isRegistered()) {
       const extraHeaders: string[] = ['X-JCallId: ' + this.currentCallId]
+
+      // 添加 x-rtp-id 头
+      if (this.sipController && this.sipController.rtpId) {
+        extraHeaders.push('x-rtp-id: ' + this.sipController.rtpId)
+      }
+
       if (param) {
         if (param.businessId) {
           extraHeaders.push('X-JBusinessId: ' + param.businessId)
