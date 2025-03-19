@@ -3,8 +3,6 @@ import {
   CloseCircleOutlined,
   CloseSquareOutlined,
   FullscreenExitOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
   FullscreenOutlined,
   LogoutOutlined,
   RedoOutlined
