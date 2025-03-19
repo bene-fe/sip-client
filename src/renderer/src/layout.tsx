@@ -3,11 +3,13 @@ import {
   CloseCircleOutlined,
   CloseSquareOutlined,
   FullscreenExitOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   FullscreenOutlined,
   LogoutOutlined,
   RedoOutlined
 } from '@ant-design/icons'
-import { Dropdown, ConfigProvider, Skeleton, Tabs, MenuProps, Avatar } from 'antd'
+import { Dropdown, ConfigProvider, Skeleton, Tabs, MenuProps, Avatar, theme } from 'antd'
 import { useEffect, useState, Suspense, createElement, ReactNode, useRef } from 'react'
 import routeAgent, { findRouteByPath } from './agent-routes'
 import logo from './assets/logo.png'
@@ -36,7 +38,7 @@ export type LayoutTabsType = {
 }
 
 const Layout = () => {
-  const { currentTheme, agentInfo, agentDetail, setAgentDetail } = useStore()
+  const { currentTheme, agentInfo, agentDetail, setAgentDetail, setCurrentTheme } = useStore()
   const {
     currentTab,
     setCurrentTab,
@@ -54,6 +56,8 @@ const Layout = () => {
   const { status, setNavigate } = useDialpad()
   const { t } = useTranslation()
   const [pathname, setPathname] = useState('/')
+  const [collapsedState, setCollapsedState] = useState(false)
+
   const { route: menuRoute } = useMenu()
   const routeLocation = useLocation()
   const navigate = useNavigate()
@@ -287,29 +291,38 @@ const Layout = () => {
                 <div className="flex flex-row items-center gap-2">
                   <img src={logo} alt="logo" className="w-7 h-4 mr-2" />
                   <span className="text-lg font-bold">Agent Workbench</span>
-                  <StatusBar className="ml-[20px]" />
+                  {<StatusBar className="ml-[20px]" />}
                 </div>
               )}
               // logo={logo}
               layout="mix"
-              collapsed={true}
-              menuDataRender={() => menuRoute}
+              collapsed={pathname === '/agent-my-call' || collapsedState}
+              onCollapse={(collapsed) => {
+                if (pathname !== '/agent-my-call') {
+                  setCollapsedState(collapsed)
+                }
+              }}
+              collapsedButtonRender={pathname === '/agent-my-call' ? false : undefined}
+              menuDataRender={() => (menuRoute && menuRoute.length > 0 ? menuRoute : [])}
               location={{ pathname }}
               siderWidth={256}
               token={{
                 sider: {
-                  colorBgMenuItemSelected: 'rgb(34, 197, 94)',
-                  colorTextSubMenuSelected: 'white',
-                  colorMenuBackground: 'white'
+                  colorBgMenuItemSelected: 'rgb(47, 76, 221)',
+                  colorTextSubMenuSelected: currentTheme !== theme.darkAlgorithm ? 'white' : '',
+                  colorMenuBackground: currentTheme !== theme.darkAlgorithm ? 'white' : ''
                 },
                 header: {
-                  colorBgHeader: 'rgba(255, 255, 255, 1)',
-                  colorBgScrollHeader: 'rgba(255, 255, 255, 1)'
+                  colorBgHeader: currentTheme !== theme.darkAlgorithm ? 'rgba(255, 255, 255, 1)' : 'rgba(0, 0, 0, 1)',
+                  colorBgScrollHeader:
+                    currentTheme !== theme.darkAlgorithm ? 'rgba(255, 255, 255, 1)' : 'rgba(0, 0, 0, 1)'
                 }
               }}
               actionsRender={() => (
                 <div className="flex flex-row justify-center items-center gap-6 px-4">
-                  <TimezoneClock timezone={agentDetail?.org?.timezone} country={agentDetail?.org?.country} />
+                  {agentDetail?.org?.timezone && (
+                    <TimezoneClock timezone={agentDetail?.org?.timezone} country={agentDetail?.org?.country} />
+                  )}
                   <div className="hover:scale-105 transition-transform">
                     <LanguageSwitcher />
                   </div>
