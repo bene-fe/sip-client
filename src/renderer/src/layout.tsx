@@ -36,7 +36,7 @@ export type LayoutTabsType = {
 }
 
 const Layout = () => {
-  const { currentTheme, agentInfo, agentDetail, setAgentDetail, setCurrentTheme } = useStore()
+  const { currentTheme, agentInfo, agentDetail, setAgentDetail } = useStore()
   const {
     currentTab,
     setCurrentTab,
