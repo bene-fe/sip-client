@@ -13,10 +13,13 @@ import enUS from 'antd/locale/en_US'
 import esES from 'antd/locale/es_ES'
 import useLanguageStore from './store/language'
 import './assets/index.css'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // 将 Root 组件导出
 export const Root = () => {
   const { language } = useLanguageStore()
+
+  const queryClient = new QueryClient()
 
   // 根据当前语言选择对应的 antd 语言包
   let antdLocale = enUS
@@ -50,7 +53,9 @@ export const Root = () => {
         <ProConfigProvider>
           <HashRouter>
             <AuthProvider>
-              <App />
+              <QueryClientProvider client={queryClient}>
+                <App />
+              </QueryClientProvider>
             </AuthProvider>
           </HashRouter>
         </ProConfigProvider>
