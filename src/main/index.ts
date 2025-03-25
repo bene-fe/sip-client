@@ -23,7 +23,7 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
-    if (import.meta.env.DEV && process.env['DEBUG']) {
+    if (import.meta.env.DEV || process.env['DEBUG']) {
       mainWindow.webContents.openDevTools()
     }
   })
