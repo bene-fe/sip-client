@@ -1,6 +1,6 @@
 {
   "name": "sip-client",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "SIP Client",
   "main": "./out/main/index.js",
   "author": "example.com",
